@@ -1,40 +1,49 @@
 🤖 AI Resume Analyzer, Builder & Job Recommendation Platform
 
-An end-to-end AI powered career assistant that helps users create resumes, analyze ATS score, detect missing skills, and get job recommendations — while also helping recruiters automatically screen candidates.
+An end-to-end AI-powered career assistant that helps candidates build ATS-friendly resumes, analyze job compatibility, detect missing skills, and get personalized job recommendations — while enabling recruiters to automatically screen and rank candidates.
 
-🚀 Features
-👤 For Candidates
 
-AI Chatbot Resume Builder (step-by-step Q&A)
 
-Multiple professional resume templates
 
-Download resume (PDF / DOCX / TXT)
 
-ATS Compatibility Score
 
-Skill Gap Detection
 
-Job Recommendation System
 
-🧑‍💼 For Recruiters
 
-Upload multiple resumes
 
-Automatic candidate ranking
+🚀 Key Features
+👤 Candidate Side
 
-Best match detection
+🤖 AI Chatbot Resume Builder (interactive Q&A)
 
-Resume classification by job category
+🎨 Multiple professional resume templates
 
-🧠 How It Works
+📄 Download resume (PDF / DOCX / TXT)
+
+📊 ATS Compatibility Score
+
+🧩 Skill Gap Detection
+
+🎯 Personalized Job Recommendation
+
+🧑‍💼 Recruiter Side
+
+📤 Upload multiple resumes
+
+🧠 Automatic candidate ranking
+
+🏆 Best candidate match detection
+
+📂 Resume classification by category
+
+🧠 Workflow
 User → AI Chatbot → Resume Generated
-         ↓
-     Resume Analyzer (NLP)
-         ↓
- ATS Score + Missing Skills
-         ↓
- Job Recommendation Engine
+           ↓
+      Resume Analyzer (NLP)
+           ↓
+   ATS Score + Missing Skills
+           ↓
+    Job Recommendation Engine
 
 🏗️ System Architecture
 Frontend (HTML/CSS/JS)
@@ -45,10 +54,10 @@ NLP Processing (spaCy)
         ↓
 ML Models (Scikit-learn)
         ↓
-Database (MongoDB/MySQL)
+Database (MongoDB / MySQL)
 
 🛠️ Tech Stack
-Frontend
+🌐 Frontend
 
 HTML
 
@@ -56,13 +65,13 @@ CSS
 
 JavaScript
 
-Backend
+⚙️ Backend
 
 Python
 
 Flask
 
-Machine Learning / NLP
+🧠 Machine Learning & NLP
 
 spaCy
 
@@ -74,7 +83,7 @@ Cosine Similarity
 
 SVM / Naive Bayes Classifier
 
-File Processing
+📄 File Processing
 
 pdfplumber
 
@@ -82,11 +91,11 @@ python-docx
 
 PyPDF2
 
-Database
+🗄️ Database
 
 MongoDB / MySQL
 
-Deployment (Optional)
+☁️ Deployment (Optional)
 
 Docker
 
@@ -114,7 +123,7 @@ AI-Resume-Platform/
 │
 └── README.md
 
-⚙️ Installation
+⚙️ Installation & Setup
 1️⃣ Clone Repository
 git clone https://github.com/yourusername/ai-resume-platform.git
 cd ai-resume-platform
@@ -122,53 +131,51 @@ cd ai-resume-platform
 2️⃣ Install Dependencies
 pip install -r requirements.txt
 
-3️⃣ Download spaCy Model
+3️⃣ Download NLP Model
 python -m spacy download en_core_web_sm
 
 4️⃣ Run Backend Server
 python backend/app.py
 
-5️⃣ Open Frontend
+5️⃣ Run Frontend
 
-Open frontend/index.html in browser
+Open in browser:
+
+frontend/index.html
 
 📊 Example Output
-
-Resume Category: Data Scientist
-
-ATS Score: 82%
-
-Missing Skills: Docker, TensorFlow
-
-Recommended Jobs: ML Engineer, Data Analyst
-
+Feature	Result
+Resume Category	Data Scientist
+ATS Score	82%
+Missing Skills	Docker, TensorFlow
+Recommended Jobs	ML Engineer, Data Analyst
 🎯 Applications
 
-Job seekers
+Job Seekers
 
-College placement portals
+College Placement Portals
 
-HR automation systems
+HR Recruitment Automation
 
-Career guidance platforms
+Career Guidance Platforms
 
 🔮 Future Improvements
 
-BERT based deep resume understanding
+🤖 BERT-based deep resume understanding
 
-Voice chatbot interaction
+🎤 Voice chatbot interaction
 
-Interview question generator
+🎯 Interview question generator
 
-LinkedIn profile integration
+🔗 LinkedIn profile analysis
 
 🧑‍💻 Author
 
 Your Name
-AI/ML Developer
+AI / ML Developer
 
 📜 License
 
-This project is for educational and research purposes.
+This project is for educational & research purposes.
 
-⭐ If you like this project, consider giving it a star!
+⭐ If you found this useful, consider giving it a star!
