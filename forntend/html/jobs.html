@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Live Jobs - AIResume</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<header class="navbar">
+    <a class="logo" href="home.html">AIResume</a>
+    <nav class="nav-links">
+        <a href="home.html">Home</a>
+        <a href="upload.html">ATS Score</a>
+        <a href="maker_options.html">Resume Maker</a>
+        <a class="active" href="jobs.html">Live Jobs</a>
+    </nav>
+</header>
+<main class="page" id="liveJobsPage">
+    <div style="background:linear-gradient(135deg, #1d4ed8, #2563eb);color:white;padding:30px;border-radius:12px;margin-bottom:20px;">
+        <h1 style="margin:0;">Live Jobs & Career Mapping (Model 4)</h1>
+        <p style="margin-bottom:0;">Powered directly by the Arbeitnow Job API. Review real postings matching your exact stream/field, and read where to apply directly provided by Gemini AI in the boxes below!</p>
+    </div>
+    
+    <div id="jobsStatus" class="status info">Analyzing your cached profile for Live Jobs...</div>
+
+    <section class="card" style="margin-top:20px;background:#fefce8;border:1px solid #fef08a;">
+        <h2>Gemini AI Career Strategy & Ideal Jobs</h2>
+        <div id="geminiCareerMap" style="white-space:pre-wrap;display:none;"></div>
+    </section>
+
+    <section class="card" style="margin-top:20px;">
+        <h2>Arbeitnow Live Job Board Target Recommendations</h2>
+        <p>If you navigated directly here, these are general matches spanning multiple tech streams. Complete an ATS Score check to refine this list to your personal skills!</p>
+        <div id="jobs" class="grid two"></div>
+    </section>
+</main>
+<script src="../js/app.js"></script>
+</body>
+</html>

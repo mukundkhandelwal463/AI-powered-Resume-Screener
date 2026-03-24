@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS Score - AI Resume Platform</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .drop-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+            margin-bottom: 20px;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #2563eb;
+            background: #eef2ff;
+            transform: scale(1.01);
+        }
+        .drop-zone .icon { font-size: 48px; margin-bottom: 10px; }
+        .drop-zone .label { font-size: 16px; color: #64748b; }
+        .drop-zone .label strong { color: #2563eb; }
+        .drop-zone .file-name {
+            margin-top: 10px;
+            font-weight: 600;
+            color: #059669;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<header class="navbar">
+    <a class="logo" href="home.html">AIResume</a>
+    <nav class="nav-links">
+        <a href="home.html">Home</a>
+        <a class="active" href="upload.html">ATS Score</a>
+        <a href="maker_options.html">Resume Maker</a>
+        <a href="jobs.html">Live Jobs</a>
+    </nav>
+</header>
+
+<main class="page">
+    <h1>ATS Resume Analyzer</h1>
+    <p style="color:#64748b;margin-bottom:30px;">Upload your resume and optionally add Category/Stream + target job description. The engine will choose dataset or Gemini mode automatically.</p>
+
+    <article class="card" style="max-width:700px;margin:0 auto;">
+        <form id="analyzeForm">
+
+            <div class="drop-zone" id="dropZone">
+                <div class="icon">📄</div>
+                <div class="label">Drag & drop your resume here, or <strong>click to browse</strong></div>
+                <div class="file-name" id="fileName"></div>
+                <input type="file" id="resumeFile" accept=".pdf,.docx,.txt" style="display:none;">
+            </div>
+
+            <label for="streamCategory">Category / Stream (optional)</label>
+            <input id="streamCategory" type="text" placeholder="Example: Data Science, DevOps, HR, Marketing">
+
+            <label for="jobDescription">Target Job Description (optional but recommended)</label>
+            <textarea id="jobDescription" placeholder="Paste the full job description here for a precise ATS match score..." style="min-height:140px;"></textarea>
+
+            <button class="btn-primary" type="submit" style="width:100%;font-size:16px;padding:14px;">
+                Analyze Match & Get AI Career Map
+            </button>
+        </form>
+        <div id="status" class="status"></div>
+    </article>
+</main>
+
+<script src="../js/app.js"></script>
+<script>
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("resumeFile");
+    const fileNameEl = document.getElementById("fileName");
+
+    dropZone.addEventListener("click", () => fileInput.click());
+
+    dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("dragover");
+    });
+    dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("dragover");
+    });
+    dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("dragover");
+        if (e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            showFileName(e.dataTransfer.files[0].name);
+        }
+    });
+    fileInput.addEventListener("change", () => {
+        if (fileInput.files[0]) showFileName(fileInput.files[0].name);
+    });
+
+    function showFileName(name) {
+        fileNameEl.textContent = "✅ " + name;
+        fileNameEl.style.display = "block";
+    }
+</script>
+</body>
+</html>

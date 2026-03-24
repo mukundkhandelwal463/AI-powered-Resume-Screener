@@ -1,0 +1,28 @@
+  workflow-----|
+	       |
+      ----------------------------------------------------------------------------------------------------
+      |                         |                       |                                                |
+    model1                   model2                   model3 		                              model4
+(check the stream   ->   (scan the resume    ->    (give the 3 options             ->         (if the user directly click on jobs  
+ by the dataset or       and the ATS score by jd    for create the resume                      then use the model1 for the stream 
+ask from user there      by using Api and stream    1.chatbox, 2.form where                    related to that. if you are in flow   
+  own)   	        give the Missing Keywords   3. by there own                            then you already have the field                          
+(page 1)		   Suggestions)             in the option 1,2 he                       or stream now you recommand them 
+			     (page1)	      	    give all the there informations            jobs and also provied the job links
+						    then you edit the all three template       from the Api jobs from the  
+						    acc. to that then he choose the one        "https://www.arbeitnow.com/api/job-
+						    you give the option download in               board-api"
+						    pdf or world formate                        and the links of apply from 
+						    in 3 option you just give the                     "Gemini API Key"
+						    all three template acc. to that then          in the boxes 
+						    he choose then you give the option               (last page)
+						    download in pdf or world formate)		
+						             (page2,3,4,5...)
+						    (if the ats less than 70 or the 							                                              user click on create resume) 
+
+
+
+
+working -> user login/signup in webside then they have 3 features ATS score, Resume maker, Jobs, 
+
+user go in the ATS score -> model1 + model2 -> if the user got 70+ ats -> go model4, else -> go model3 -> go model4

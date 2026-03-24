@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Builder Chatbot</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<header class="navbar">
+    <a class="logo" href="home.html">AIResume</a>
+    <nav class="nav-links">
+        <a href="home.html">Home</a>
+        <a href="upload.html">ATS Score</a>
+        <a class="active" href="maker_options.html">Resume Maker</a>
+        <a href="jobs.html">Live Jobs</a>
+    </nav>
+</header>
+
+<main class="page" id="chatbotPage">
+    <h1>AI Resume Builder (Chatbot)</h1>
+    <section class="grid two">
+        <article class="card">
+            <h2>Conversation</h2>
+            
+            <label for="templateChoice">Template Style</label>
+            <select id="templateChoice" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;margin-bottom:14px;font-size:14px;">
+                <option value="Classic ATS">Classic ATS</option>
+                <option value="Modern Minimalist">Modern Minimalist</option>
+                <option value="Executive">Executive</option>
+            </select>
+            
+            <div id="chatbox" class="chat-box"></div>
+
+            <label for="userInput">Your answer</label>
+            <input type="text" id="userInput" placeholder="Type your answer">
+            <button class="btn-primary" id="sendBtn" type="button">Send</button>
+            <button class="btn-secondary" id="generateBtn" type="button" disabled>Generate Resume</button>
+            <div id="chatStatus" class="status"></div>
+        </article>
+
+        <article class="card">
+            <h2>Generated Resume Hub</h2>
+            <div id="geminiSuggestions" style="white-space:pre-wrap;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:12px;margin-bottom:15px;display:none;"></div>
+            <div style="display:flex;gap:10px;margin-bottom:15px;" id="downloadActions"></div>
+            <pre id="generatedResume" style="white-space:pre-wrap;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;min-height:220px;"></pre>
+
+            <h3>Recommended Jobs</h3>
+            <ul id="chatJobs" class="list"></ul>
+        </article>
+    </section>
+</main>
+
+<script src="../js/app.js"></script>
+</body>
+</html>

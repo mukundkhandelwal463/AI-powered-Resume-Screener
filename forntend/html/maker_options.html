@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Resume Maker Options</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .maker-btn:hover { background: #eef2ff; transform: translateY(-4px); transition: 0.3s; }
+    </style>
+</head>
+<body>
+<header class="navbar">
+    <a class="logo" href="home.html">AIResume</a>
+    <nav class="nav-links">
+        <a href="home.html">Home</a>
+        <a href="upload.html">ATS Score</a>
+        <a class="active" href="maker_options.html">Resume Maker</a>
+        <a href="jobs.html">Live Jobs</a>
+    </nav>
+</header>
+<main class="page" style="text-align: center;">
+    <h1>Resume Maker Hub (Model 3)</h1>
+    <p>Choose exactly how you want to build or improve your resume!</p>
+    <div class="grid result-grid" style="margin-top:40px;">
+        <article class="card maker-btn" onclick="window.location.href='chatbot.html'" style="cursor:pointer;">
+            <h2>1. Chatbot Builder 🤖</h2>
+            <p>Interact with our smart chatbot to generate your resume details conversationally.</p>
+        </article>
+        <article class="card maker-btn" onclick="window.location.href='form.html'" style="cursor:pointer;">
+            <h2>2. Web Form 📝</h2>
+            <p>Fill out a traditional web form with all your ATS-ready resume sections manually.</p>
+        </article>
+        <article class="card maker-btn" onclick="window.location.href='blanks.html'" style="cursor:pointer;">
+            <h2>3. Classic Download 📄</h2>
+            <p>Grab our 3 perfectly engineered ATS blank templates to edit entirely on your own offline.</p>
+        </article>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Results - AI Resume Platform</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<header class="navbar">
+    <a class="logo" href="home.html">AIResume</a>
+    <nav class="nav-links">
+        <a href="home.html">Home</a>
+        <a href="upload.html">ATS Score</a>
+        <a href="maker_options.html">Resume Maker</a>
+        <a href="jobs.html">Live Jobs</a>
+    </nav>
+</header>
+
+<main class="page" id="resultPage">
+    <h1>Resume Analysis Result</h1>
+
+    <div id="resultEmpty" class="status info" style="display:none;">
+        No analysis result found. Go to Analyze page and submit a resume.
+    </div>
+
+    <section class="card" style="margin-bottom:18px;">
+        <h2>Summary</h2>
+        <div class="result-grid">
+            <div class="metric">
+                <div class="label">ATS Score</div>
+                <div id="atsScore" class="value">--</div>
+            </div>
+            <div class="metric">
+                <div class="label">Category</div>
+                <div id="category" class="value">--</div>
+            </div>
+            <div class="metric">
+                <div class="label">Detected Skills</div>
+                <div id="skills" class="value" style="font-size:14px;font-weight:600;">--</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="grid two">
+        <article class="card">
+            <h2>Missing Keywords</h2>
+            <ul id="missingKeywords" class="list"></ul>
+        </article>
+        <article class="card">
+            <h2>Suggestions</h2>
+            <ul id="suggestions" class="list"></ul>
+        </article>
+    </section>
+
+    <div id="decisionBox" style="margin-top:20px;padding:26px;border-radius:12px;background:#f0fdf4;border:1px solid #d9f99d;text-align:center;display:none;box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+        <h2 id="decisionTitle" style="margin-top:0;">Analyzing Your Next Steps...</h2>
+        <p style="color:#4b5563;margin-bottom:14px;">Our dynamic Model Pipeline determines exactly where you should proceed next.</p>
+        <button id="decisionBtn" class="btn-primary" style="font-size:18px;min-width:250px;"></button>
+    </div>
+</main>
+
+<script src="../js/app.js"></script>
+</body>
+</html>
