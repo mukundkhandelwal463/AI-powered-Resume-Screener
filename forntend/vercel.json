@@ -1,0 +1,22 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/html/home.html" },
+    { "source": "/home", "destination": "/html/home.html" },
+    { "source": "/home.html", "destination": "/html/home.html" },
+    { "source": "/upload", "destination": "/html/upload.html" },
+    { "source": "/upload.html", "destination": "/html/upload.html" },
+    { "source": "/result", "destination": "/html/result.html" },
+    { "source": "/result.html", "destination": "/html/result.html" },
+    { "source": "/maker_options", "destination": "/html/maker_options.html" },
+    { "source": "/maker_options.html", "destination": "/html/maker_options.html" },
+    { "source": "/chatbot", "destination": "/html/chatbot.html" },
+    { "source": "/chatbot.html", "destination": "/html/chatbot.html" },
+    { "source": "/form", "destination": "/html/form.html" },
+    { "source": "/form.html", "destination": "/html/form.html" },
+    { "source": "/blanks", "destination": "/html/blanks.html" },
+    { "source": "/blanks.html", "destination": "/html/blanks.html" },
+    { "source": "/jobs", "destination": "/html/jobs.html" },
+    { "source": "/jobs.html", "destination": "/html/jobs.html" },
+    { "source": "/api/(.*)", "destination": "https://ai-powered-resume-screener.onrender.com/api/$1" }
+  ]
+}

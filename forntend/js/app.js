@@ -2,6 +2,16 @@ function resolveApiBase() {
     const fromStorage = localStorage.getItem("API_BASE_URL");
     if (fromStorage) return fromStorage.replace(/\/+$/, "");
 
+    // Optional runtime override for production debugging/custom deployments.
+    if (window.__API_BASE_URL__) {
+        return String(window.__API_BASE_URL__).replace(/\/+$/, "");
+    }
+
+    // Vercel frontend should call same-origin /api and rely on vercel.json rewrite.
+    if (window.location.hostname.endsWith("vercel.app")) {
+        return "/api";
+    }
+
     if (window.location.protocol.startsWith("http") && window.location.hostname) {
         return `${window.location.protocol}//${window.location.hostname}:5000/api`;
     }

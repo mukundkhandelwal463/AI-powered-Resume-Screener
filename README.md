@@ -101,6 +101,28 @@ Render will run:
 - Build: `pip install -r backend/requirements.txt`
 - Start: `cd backend && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120`
 
+## Split Deployment (Recommended)
+
+Use:
+- Backend: Render
+- Frontend: Vercel
+
+### 1) Deploy backend on Render
+1. Create a Render Web Service from this repo.
+2. Build command: `pip install -r backend/requirements.txt`
+3. Start command: `cd backend && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120`
+4. Add env var: `GEMINI_API_KEY`
+5. Verify: `https://<your-render-url>/api/health`
+
+### 2) Deploy frontend on Vercel
+1. Import this repo into Vercel.
+2. Set **Root Directory** to `forntend`.
+3. Deploy.
+
+`forntend/vercel.json` already handles:
+- Route rewrites for page paths (`/`, `/upload`, etc.)
+- API proxy rewrite from `/api/*` to Render backend.
+
 ## Usage
 
 ### Candidate flow
