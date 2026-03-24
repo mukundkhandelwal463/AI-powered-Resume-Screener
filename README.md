@@ -87,16 +87,19 @@ The frontend auto-targets backend API at `http://127.0.0.1:5000/api` by default.
 
 This repo includes `render.yaml` for one-click deployment.
 
-1. Push this repo to GitHub.
-2. In Render: `New +` -> `Blueprint`.
-3. Select this GitHub repo.
-4. Add environment variable `GEMINI_API_KEY`.
-5. Deploy.
+1. Push this repo to GitHub (already done).
+2. Open Render and choose `New +` -> `Blueprint`.
+3. Select this GitHub repo: `mukundkhandelwal463/AI-powered-Resume-Screener`.
+4. Add environment variable `GEMINI_API_KEY` (from your Gemini account).
+5. Click `Apply` / `Deploy`.
+6. After deploy, open your Render URL and verify:
+   - `/api/health` returns `{ "status": "ok" }`
+   - `/` opens the frontend home page.
 
 Render will run:
 
 - Build: `pip install -r backend/requirements.txt`
-- Start: `cd backend && gunicorn app:app`
+- Start: `cd backend && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120`
 
 ## Usage
 
