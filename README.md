@@ -1,163 +1,195 @@
-# Resume Screener
+# AI-Powered Resume Screener
 
-AI-powered resume analysis and candidate screening project with a Flask backend and a static HTML/CSS/JS frontend.
+An end-to-end AI career platform that helps:
+- Candidates analyze resume quality, improve ATS match, and get role recommendations.
+- Recruiters rank multiple resumes against one job description.
+
+It combines classic ML/NLP scoring with Gemini-powered intelligence to deliver practical, real-world resume guidance.
+
+---
+
+## What This Project Does
+
+This project takes resume input (`PDF`, `DOCX`, `TXT`) and turns it into actionable career output.
+
+Core engine flow:
+1. Parse resume text.
+2. Clean and normalize resume content.
+3. Detect skills and role signals.
+4. Compute ATS compatibility against job description.
+5. Predict/resolve category using dataset + user input + Gemini fallback.
+6. Generate missing keyword and suggestion insights.
+7. Recommend relevant live jobs.
+
+It also includes:
+- Interactive chatbot-based resume builder.
+- Form-based resume builder.
+- Blank template export to DOCX/PDF.
+- Recruiter mode for bulk candidate ranking.
+
+---
+
+## Why This Is Useful
+
+Most people know their resume is weak, but do not know exactly what to fix. This project solves that by converting resume text into concrete decisions.
+
+Why it matters:
+- Reduces guesswork before applying.
+- Improves ATS visibility through keyword and skills alignment.
+- Gives direct next-step routing:
+  - Good score -> apply to jobs.
+  - Low score -> improve resume first.
+- Helps recruiters quickly shortlist strong candidates using objective scoring.
+
+In short: it saves time, improves quality, and increases decision confidence for both job seekers and hiring teams.
+
+---
 
 ## Features
 
-- Resume parsing from `PDF`, `DOCX`, and `TXT`
-- Resume category prediction (SVM classifier trained from dataset when available)
-- ATS score calculation against a job description (TF-IDF + cosine similarity)
-- Skill extraction and missing keyword detection
-- Job recommendations based on skill overlap
-- Recruiter workflow to rank multiple resumes against one job description
-- Chatbot-style resume builder flow
+### 1) ATS Resume Analyzer
+- Upload resume.
+- Add optional target JD.
+- Add optional `Category / Stream`.
+- Returns:
+  - ATS score
+  - Category
+  - Detected skills
+  - Missing keywords
+  - Unified improvement suggestions
+
+### 2) Smart Category Logic (Dataset + Gemini Routing)
+- If user provides category and it exists in dataset -> dataset-driven flow.
+- If category is not present -> Gemini-only fallback analysis.
+- If user gives category + JD -> uses user category, JD-focused ATS logic.
+
+### 3) Resume Builder (Model 3 Flow)
+- Chatbot Q&A resume generation.
+- Form-based resume generation.
+- Multiple template options.
+- Export to `DOCX` and `PDF`.
+
+### 4) Job Recommendation Engine
+- Skill overlap scoring.
+- Missing-skill awareness.
+- Live-job integration flow.
+- Personalized role mapping.
+
+### 5) Recruiter Mode
+- Upload multiple resumes.
+- Compare against one JD.
+- Get ranked candidate list with ATS scoring.
+
+### 6) Unified Suggestion UX
+- No split suggestion cards.
+- All AI + rule-based advice shown together in one clean suggestion list.
+
+---
 
 ## Tech Stack
 
-- Backend: Python, Flask, Flask-CORS
-- ML/NLP: scikit-learn, pandas, numpy
-- File parsing: pdfplumber, PyPDF2, python-docx
-- Frontend: HTML, CSS, JavaScript (vanilla)
+### Backend
+- `Python`
+- `Flask`
+- `Flask-CORS`
+- `Gunicorn` (production server)
 
-## Project Structure
+### AI / NLP / ML
+- `scikit-learn` (TF-IDF, cosine similarity, classification)
+- `pandas`, `numpy`
+- `google-generativeai` (Gemini integration)
 
-```text
-Resume_Screener/
-|- backend/
-|  |- app.py
-|  |- model1.py
-|  |- requirements.txt
-|  |- UpdatedResumeDataSet.csv
-|- forntend/            # folder name in repo is "forntend"
-|  |- html/
-|  |- css/
-|  |- js/
-```
+### Resume Parsing
+- `pdfplumber`
+- `PyPDF2`
+- `python-docx`
 
-## API Endpoints
+### Frontend
+- `HTML5`
+- `CSS3`
+- `Vanilla JavaScript`
 
-- `GET /api/health` - health check
-- `POST /api/analyze-resume` - analyze one resume (+ optional job description)
-- `POST /api/recommend-jobs` - recommend jobs from resume text/file
-- `POST /api/rank-candidates` - rank multiple resumes for one job description
-- `GET /api/chatbot/questions` - chatbot question set
-- `POST /api/chatbot/generate-resume` - generate resume text from answers
+### Deployment
+- `Render` (backend)
+- `Vercel` (frontend)
 
-## Local Setup
-
-### 1) Clone and enter project
-
-```bash
-git clone <your-repo-url>
-cd Resume_Screener
-```
-
-### 2) Create virtual environment and install backend dependencies
-
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r backend/requirements.txt
-```
-
-### 3) Run backend server
-
-```bash
-python backend/app.py
-```
-
-Backend runs at: `http://127.0.0.1:5000`
-
-### 4) Run frontend
-
-Serve the `forntend` directory using a static server:
-
-```bash
-cd forntend
-python -m http.server 5500
-```
-
-Then open:
-
-- `http://127.0.0.1:5500/html/home.html`
-
-The frontend auto-targets backend API at `http://127.0.0.1:5000/api` by default.
-
-## Hosting (Render)
-
-This repo includes `render.yaml` for one-click deployment.
-
-1. Push this repo to GitHub (already done).
-2. Open Render and choose `New +` -> `Blueprint`.
-3. Select this GitHub repo: `mukundkhandelwal463/AI-powered-Resume-Screener`.
-4. Add environment variable `GEMINI_API_KEY` (from your Gemini account).
-5. Click `Apply` / `Deploy`.
-6. After deploy, open your Render URL and verify:
-   - `/api/health` returns `{ "status": "ok" }`
-   - `/` opens the frontend home page.
-
-Render will run:
-
-- Build: `pip install -r backend/requirements.txt`
-- Start: `cd backend && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120`
-
-## Split Deployment (Recommended)
-
-Use:
-- Backend: Render
-- Frontend: Vercel
-
-### 1) Deploy backend on Render
-1. Create a Render Web Service from this repo.
-2. Build command: `pip install -r backend/requirements.txt`
-3. Start command: `cd backend && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120`
-4. Add env var: `GEMINI_API_KEY`
-5. Verify: `https://<your-render-url>/api/health`
-
-### 2) Deploy frontend on Vercel
-1. Import this repo into Vercel.
-2. Set **Root Directory** to `forntend`.
-3. Deploy.
-
-`forntend/vercel.json` already handles:
-- Route rewrites for page paths (`/`, `/upload`, etc.)
-- API proxy rewrite from `/api/*` to Render backend.
+---
 
 ## Usage
 
-### Candidate flow
+### Candidate Workflow (Main User Flow)
+1. Open ATS page.
+2. Upload resume (`PDF` / `DOCX` / `TXT`).
+3. Add optional `Category / Stream`.
+4. Paste target JD (recommended).
+5. Click Analyze.
+6. Review:
+   - ATS score
+   - Category
+   - Missing keywords
+   - Suggestions
+7. Take next action:
+   - Good score -> move to Live Jobs.
+   - Low score -> use Resume Maker and re-check.
 
-1. Open `upload.html`.
-2. Upload resume (`.pdf`, `.docx`, or `.txt`).
-3. Optionally paste a job description.
-4. Submit to get ATS score, category, skill gap, and recommendations.
+### Resume Builder Workflow
+1. Open Resume Maker.
+2. Choose Chatbot or Form mode.
+3. Fill profile details.
+4. Select template.
+5. Generate and download `DOCX` / `PDF`.
 
-### Recruiter flow
-
-1. In `upload.html`, use recruiter section.
-2. Paste job description.
+### Recruiter Workflow
+1. Open recruiter section in ATS page.
+2. Paste JD.
 3. Upload multiple resumes.
-4. Submit to get ranked candidates by ATS score.
+4. Run ranking.
+5. Review ranked candidates by ATS score.
 
-### Chatbot resume builder
+---
 
-1. Open `chatbot.html`.
-2. Answer prompted questions.
-3. Generate resume text and related job suggestions.
+## Step-by-Step Deployment Guide (Frontend on Vercel + Backend on Render)
 
-## Notes
+### A) Deploy Backend on Render
+1. Open Render dashboard.
+2. Click `New +` -> `Web Service`.
+3. Connect GitHub and select repo: `mukundkhandelwal463/AI-powered-Resume-Screener`.
+4. Configure:
+   - Runtime: `Python`
+   - Build Command: `pip install -r backend/requirements.txt`
+   - Start Command: `cd backend && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120`
+5. Add Environment Variable:
+   - `GEMINI_API_KEY` = your actual Gemini key
+6. Deploy service.
+7. Verify health:
+   - `https://<your-render-url>/api/health`
+   - Should return: `{ "status": "ok" }`
 
-- Ensure `backend/UpdatedResumeDataSet.csv` exists for category classification training.
-- If dataset loading fails, category defaults to `General`.
-- CORS is enabled in backend for local frontend integration.
+### B) Deploy Frontend on Vercel
+1. Open Vercel dashboard.
+2. Click `Add New` -> `Project`.
+3. Import same GitHub repo.
+4. Set **Root Directory** to: `forntend`
+5. Deploy.
 
-## Future Improvements
+### C) Connect Frontend to Backend
+`forntend/vercel.json` rewrites `/api/*` to Render backend.
 
-- Add authentication and persistent database storage
-- Export generated resumes to PDF/DOCX from UI
-- Add model evaluation metrics and test coverage
-- Containerize with Docker
+Update this line if your Render URL is different:
+- `https://ai-powered-resume-screener.onrender.com/api/$1`
 
-## License
+Then redeploy Vercel.
 
-This project is currently unlicensed. Add a `LICENSE` file before public distribution.
+### D) Final Production Check
+1. Open Vercel app URL.
+2. Go to ATS page.
+3. Upload one resume + JD and run analysis.
+4. Confirm:
+   - ATS result loads
+   - Suggestions are shown
+   - Live jobs and resume maker pages work
+   - No CORS/API errors in browser console
+
+---
+
+Built for practical resume optimization, faster candidate screening, and better hiring decisions.
