@@ -7,13 +7,13 @@ function resolveApiBase() {
         return String(window.__API_BASE_URL__).replace(/\/+$/, "");
     }
 
-    // Vercel frontend should call same-origin /api and rely on vercel.json rewrite.
-    if (window.location.hostname.endsWith("vercel.app")) {
-        return "/api";
-    }
-
     if (window.location.protocol.startsWith("http") && window.location.hostname) {
-        return `${window.location.protocol}//${window.location.hostname}:5000/api`;
+        const host = window.location.hostname;
+        if (host === "localhost" || host === "127.0.0.1") {
+            return `${window.location.protocol}//${host}:5000/api`;
+        }
+        // Production frontend (Vercel/custom domain) should use /api rewrite.
+        return "/api";
     }
     return "http://127.0.0.1:5000/api";
 }
