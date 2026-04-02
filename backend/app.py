@@ -9,6 +9,11 @@ import json
 
 from flask import Flask, jsonify, request, render_template, abort, send_from_directory, redirect, session
 from flask_cors import CORS
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import random
+import string
 
 from model1 import (
     CHATBOT_QUESTIONS,
@@ -69,7 +74,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 CORS(app)
 
 try:
-    from database import db, User, Resume
+    from database import db, User, Resume, OTP
     db.init_app(app)
     with app.app_context():
         db.create_all()
@@ -79,6 +84,41 @@ except Exception as e:
     print("[DB] Server will run but auth features won't work.")
 
 service = ResumeModelService(dataset_path=DATASET_PATH)
+
+
+def send_email(subject, recipient, body_html):
+    """Utility to send an email via SMTP."""
+    smtp_server = os.environ.get("SMTP_SERVER")
+    smtp_port = int(os.environ.get("SMTP_PORT", 587))
+    smtp_user = os.environ.get("SMTP_USER")
+    smtp_pass = os.environ.get("SMTP_PASS")
+    mail_sender = os.environ.get("MAIL_SENDER", "AI Resume <noreply@airesume.com>")
+
+    if not all([smtp_server, smtp_user, smtp_pass]):
+        print("[SMTP] Error: Missing configuration in .env")
+        return False
+
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = mail_sender
+        msg["To"] = recipient
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body_html, "html"))
+
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"[SMTP] Error sending to {recipient}: {e}")
+        return False
+
+
+def generate_otp(length=6):
+    """Generate a random numeric OTP."""
+    return "".join(random.choices(string.digits, k=length))
 
 ALLOWED_PAGES = {
     "home",
@@ -697,13 +737,90 @@ def register():
     if User.query.filter_by(email=email).first():
         return jsonify({"success": False, "error": "Email already registered."}), 409
 
-    user = User(full_name=full_name, email=email, mobile=mobile)
+    user = User(full_name=full_name, email=email, mobile=mobile, is_verified=False)
     user.set_password(password)
     db.session.add(user)
+    
+    # Generate and send OTP
+    otp_code = generate_otp()
+    otp_entry = OTP(email=email, code=otp_code, purpose="registration")
+    db.session.add(otp_entry)
     db.session.commit()
 
-    session["user_id"] = user.id
-    return jsonify({"success": True, "user": user.to_dict()}), 201
+    email_body = f"""
+    <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #ff6b6b;">Confirm Your AI Resume Account</h2>
+        <p>Hello {full_name},</p>
+        <p>Use the code below to verify your email address and start building your premium resume:</p>
+        <div style="background: #f8f9fa; padding: 15px; font-size: 24px; font-weight: bold; text-align: center; color: #333; letter-spacing: 5px;">
+            {otp_code}
+        </div>
+        <p>This code will expire in 10 minutes.</p>
+        <p>Best regards,<br>The AI Resume Team</p>
+    </div>
+    """
+    send_email("Verify your AI Resume Account", email, email_body)
+
+    return jsonify({"success": True, "message": "Verify your email with the OTP sent.", "email": email}), 201
+
+
+@app.route("/api/auth/verify-otp", methods=["POST"])
+def verify_otp():
+    """Verify the OTP sent to an email."""
+    data = request.get_json(force=True)
+    email = (data.get("email") or "").strip().lower()
+    code = (data.get("code") or "").strip()
+
+    if not email or not code:
+        print(f"[OTP Verify] Error: Missing email or code. Email: '{email}', Code: '{code}'")
+        return jsonify({"success": False, "error": "Email and code are required."}), 400
+
+    otp_record = OTP.query.filter_by(email=email, code=code).order_by(OTP.created_at.desc()).first()
+    
+    if not otp_record:
+        print(f"[OTP Verify] Error: OTP not found for {email} with code {code}.")
+        # Optional: Log what codes ARE in the DB for this email to debug
+        all_otps = OTP.query.filter_by(email=email).all()
+        print(f"[OTP Verify] Existing codes for {email}: {[o.code for o in all_otps]}")
+        return jsonify({"success": False, "error": "Invalid OTP code."}), 400
+    
+    if otp_record.is_expired:
+        print(f"[OTP Verify] Error: OTP expired for {email}.")
+        return jsonify({"success": False, "error": "OTP has expired. Please request a new one."}), 400
+
+    # Mark user as verified
+    user = User.query.filter_by(email=email).first()
+    if user:
+        user.is_verified = True
+        db.session.delete(otp_record) # Cleanup
+        db.session.commit()
+        
+        session["user_id"] = user.id
+        return jsonify({"success": True, "user": user.to_dict()})
+    
+    return jsonify({"success": False, "error": "User not found."}), 404
+
+
+@app.route("/api/auth/resend-otp", methods=["POST"])
+def resend_otp():
+    """Resend a new OTP to the user's email."""
+    data = request.get_json(force=True)
+    email = (data.get("email") or "").strip().lower()
+
+    if not email:
+        return jsonify({"success": False, "error": "Email is required."}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"success": False, "error": "Email not found."}), 404
+
+    otp_code = generate_otp()
+    otp_entry = OTP(email=email, code=otp_code, purpose="registration")
+    db.session.add(otp_entry)
+    db.session.commit()
+
+    send_email("New Verification Code", email, f"Your new code is: {otp_code}")
+    return jsonify({"success": True, "message": "New OTP sent."})
 
 
 @app.route("/api/auth/login", methods=["POST"])
@@ -716,6 +833,14 @@ def login():
     user = User.query.filter_by(email=email).first()
     if not user or not user.check_password(password):
         return jsonify({"success": False, "error": "Invalid email or password."}), 401
+
+    if not user.is_verified:
+        return jsonify({
+            "success": False, 
+            "error": "Email not verified. Please verify your account first.",
+            "unverified": True,
+            "email": user.email
+        }), 403
 
     session["user_id"] = user.id
     return jsonify({"success": True, "user": user.to_dict()})

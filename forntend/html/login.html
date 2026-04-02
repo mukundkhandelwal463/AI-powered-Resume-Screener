@@ -62,6 +62,48 @@
         }
         .auth-form { display: none; }
         .auth-form.active { display: block; }
+        .otp-box {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .otp-inputs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .otp-inputs input {
+            width: 45px;
+            height: 50px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 800;
+            border: 2px solid rgba(24, 35, 38, 0.1);
+            border-radius: var(--radius-md);
+            background: white;
+            transition: all 0.2s;
+        }
+        .otp-inputs input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(255, 107, 74, 0.1);
+            outline: none;
+        }
+        .resend-text {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 15px;
+        }
+        .resend-link {
+            color: var(--accent-deep);
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .resend-link.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            text-decoration: none;
+        }
         .divider {
             display: flex;
             align-items: center;
@@ -222,6 +264,24 @@
                 <button type="submit" class="btn-primary" style="width:100%;margin-top:8px;">Create Account</button>
             </form>
 
+            <!-- OTP Form -->
+            <form id="otpForm" class="auth-form" onsubmit="handleVerifyOTP(event)">
+                <div class="otp-box">
+                    <p style="font-weight:700;margin-bottom:10px;">Verify Your Email</p>
+                    <p class="subtitle" id="otpSubtitle">Check your email for a 6-digit code</p>
+                    <div class="otp-inputs" id="otpInputs">
+                        <input type="text" maxlength="1" oninput="moveNext(this, 1)" onkeydown="backspace(this, 1)">
+                        <input type="text" maxlength="1" oninput="moveNext(this, 2)" onkeydown="backspace(this, 2)">
+                        <input type="text" maxlength="1" oninput="moveNext(this, 3)" onkeydown="backspace(this, 3)">
+                        <input type="text" maxlength="1" oninput="moveNext(this, 4)" onkeydown="backspace(this, 4)">
+                        <input type="text" maxlength="1" oninput="moveNext(this, 5)" onkeydown="backspace(this, 5)">
+                        <input type="text" maxlength="1" oninput="moveNext(this, 6)" onkeydown="backspace(this, 6)">
+                    </div>
+                    <button type="submit" class="btn-primary" style="width:100%;">Verify & Sign In</button>
+                    <p class="resend-text">Didn't get it? <span class="resend-link" id="resendBtn" onclick="handleResendOTP()">Resend OTP</span></p>
+                </div>
+            </form>
+
             <div id="authStatus" class="auth-status"></div>
         </div>
 
@@ -261,10 +321,15 @@ function switchTab(tab) {
     if (tab === 'login') {
         document.querySelector('.auth-tabs button:first-child').classList.add('active');
         document.getElementById('loginForm').classList.add('active');
+        document.getElementById('authCard').querySelector('h1').textContent = "Welcome Back";
+        document.getElementById('authCard').querySelector('.subtitle').textContent = "Sign in to save your resumes & analysis";
     } else {
         document.querySelector('.auth-tabs button:last-child').classList.add('active');
         document.getElementById('registerForm').classList.add('active');
+        document.getElementById('authCard').querySelector('h1').textContent = "Create Account";
+        document.getElementById('authCard').querySelector('.subtitle').textContent = "Join the future of resume building";
     }
+    document.getElementById('otpForm').classList.remove('active');
     document.getElementById('authStatus').className = 'auth-status';
 }
 
@@ -287,6 +352,9 @@ async function handleLogin(e) {
         const data = await res.json();
         if (data.success) {
             showLoggedIn(data.user);
+        } else if (data.unverified) {
+            showOTP(data.email);
+            showStatus(data.error, 'error');
         } else {
             showStatus(data.error || 'Login failed.', 'error');
         }
@@ -309,12 +377,93 @@ async function handleRegister(e) {
         });
         const data = await res.json();
         if (data.success) {
-            showLoggedIn(data.user);
+            showOTP(email);
+            showStatus("Verification code sent to " + email, 'success');
         } else {
             showStatus(data.error || 'Registration failed.', 'error');
         }
     } catch (err) {
         showStatus('Server error: ' + err.message, 'error');
+    }
+}
+
+function showOTP(email) {
+    document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+    document.getElementById('otpForm').classList.add('active');
+    document.getElementById('otpSubtitle').textContent = "Check " + email + " for 6-digit code";
+    document.getElementById('otpForm').dataset.email = email;
+    document.getElementById('authCard').querySelector('h1').textContent = "Verification";
+    
+    // Clear inputs
+    document.querySelectorAll('.otp-inputs input').forEach(i => i.value = '');
+    document.querySelector('.otp-inputs input').focus();
+}
+
+async function handleVerifyOTP(e) {
+    e.preventDefault();
+    const email = document.getElementById('otpForm').dataset.email;
+    const inputs = document.querySelectorAll('.otp-inputs input');
+    const code = Array.from(inputs).map(i => i.value).join('');
+
+    if (code.length < 6) return;
+
+    try {
+        const res = await fetch(API + '/api/auth/verify-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, code })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showLoggedIn(data.user);
+        } else {
+            showStatus(data.error || 'Verification failed.', 'error');
+        }
+    } catch (err) {
+        showStatus('Server error: ' + err.message, 'error');
+    }
+}
+
+async function handleResendOTP() {
+    const btn = document.getElementById('resendBtn');
+    if (btn.classList.contains('disabled')) return;
+
+    const email = document.getElementById('otpForm').dataset.email;
+    try {
+        const res = await fetch(API + '/api/auth/resend-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showStatus("New OTP sent to " + email, 'success');
+            
+            // Cooldown resend
+            btn.classList.add('disabled');
+            let sec = 30;
+            const timer = setInterval(() => {
+                sec--;
+                btn.textContent = "Resend in " + sec + "s";
+                if (sec <= 0) {
+                    clearInterval(timer);
+                    btn.classList.remove('disabled');
+                    btn.textContent = "Resend OTP";
+                }
+            }, 1000);
+        }
+    } catch (err) {}
+}
+
+function moveNext(el, index) {
+    if (el.value.length === 1 && index < 6) {
+        document.querySelectorAll('.otp-inputs input')[index].focus();
+    }
+}
+
+function backspace(el, index) {
+    if (event.key === "Backspace" && el.value === "" && index > 1) {
+        document.querySelectorAll('.otp-inputs input')[index - 2].focus();
     }
 }
 

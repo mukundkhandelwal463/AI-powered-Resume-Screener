@@ -20,6 +20,7 @@ class User(db.Model):
     email = db.Column(db.String(200), unique=True, nullable=False, index=True)
     mobile = db.Column(db.String(20), nullable=True)
     password_hash = db.Column(db.String(256), nullable=False)
+    is_verified = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationship — one user has many resumes
@@ -37,8 +38,27 @@ class User(db.Model):
             "full_name": self.full_name,
             "email": self.email,
             "mobile": self.mobile,
+            "is_verified": self.is_verified,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class OTP(db.Model):
+    """Temporary OTP codes for email verification."""
+    __tablename__ = "otps"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    email = db.Column(db.String(200), nullable=False, index=True)
+    code = db.Column(db.String(10), nullable=False)
+    purpose = db.Column(db.String(50), default="registration") # registration, reset_password
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    @property
+    def is_expired(self):
+        # 10 minutes expiry
+        now = datetime.now(timezone.utc)
+        delta = now - self.created_at.replace(tzinfo=timezone.utc)
+        return delta.total_seconds() > 600
 
 
 class Resume(db.Model):
