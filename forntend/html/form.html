@@ -3,11 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>Form Builder - AIResume</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
 <header class="navbar">
-    <a class="logo" href="home.html">AIResume</a>
+    <a class="brand" href="home.html">
+        <span class="brand-mark">AR</span>
+        <div>
+            <strong>AIResume</strong>
+            <span>Intelligent Career Pipeline</span>
+        </div>
+    </a>
     <nav class="nav-links">
         <a href="home.html">Home</a>
         <a href="upload.html">ATS Score</a>
@@ -16,41 +25,115 @@
     </nav>
 </header>
 <main class="page" id="formPage">
+    <p style="color:var(--accent-deep);font-size:0.82rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;">Form Mode</p>
     <h1>Web Form Builder</h1>
+    <p style="color:var(--muted);margin-top:-6px;margin-bottom:22px;line-height:1.7;">Pick any template file, edit from the right panel, and watch live updates on the left.</p>
+
+    <section class="template-picker" id="templatePicker">
+        <button type="button" class="template-option active" data-template="classical.pdf">
+            <span class="template-option-title">classical.pdf</span>
+            <span class="template-option-subtitle">Template file</span>
+        </button>
+        <button type="button" class="template-option" data-template="freasher.pdf">
+            <span class="template-option-title">freasher.pdf</span>
+            <span class="template-option-subtitle">Template file</span>
+        </button>
+        <button type="button" class="template-option" data-template="resume for experienced.pdf">
+            <span class="template-option-title">resume for experienced.pdf</span>
+            <span class="template-option-subtitle">Template file</span>
+        </button>
+        <button type="button" class="template-option" data-template="resume for experienced2.pdf">
+            <span class="template-option-title">resume for experienced2.pdf</span>
+            <span class="template-option-subtitle">Template file</span>
+        </button>
+    </section>
+
     <section class="grid two">
         <article class="card">
-            <h2>Your Details</h2>
+            <h2>Live Resume Preview</h2>
+            <div class="template-chip">Template: <span id="selectedTemplateLabel">classical.pdf</span></div>
+            <div id="templateHeadingList" class="template-heading-list"></div>
+            <div id="fGemini" style="white-space:pre-wrap;background:var(--accent-soft);border:1px solid rgba(225,75,41,0.15);border-radius:var(--radius-md);padding:14px;margin:14px 0;display:none;"></div>
+            <div id="fPreview" class="resume-preview resume-preview-rich">Your live preview will appear here as you type.</div>
+            <div id="fDownloads" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:15px;"></div>
+            <button class="btn-primary" onclick="window.location.href='jobs.html'" style="margin-top:20px;display:none;" id="toJobsBtnForm">Proceed to Live Jobs!</button>
+        </article>
+
+        <article class="card">
+            <h2>Edit Details</h2>
             <form id="buildForm">
-                <input type="text" id="fName" placeholder="Full Name" required>
-                <input type="email" id="fEmail" placeholder="Email Address" required>
-                <input type="text" id="fPhone" placeholder="Phone Number" required>
-                <input type="text" id="fLocation" placeholder="Location/LinkedIn" required>
-                <textarea id="fSummary" placeholder="Professional Summary"></textarea>
-                <textarea id="fSkills" placeholder="Top Skills (comma separated)"></textarea>
-                <textarea id="fExp" placeholder="Experience (Bullet points)"></textarea>
-                <textarea id="fEdu" placeholder="Education Details"></textarea>
+                <div class="field-block" data-field="name">
+                    <label for="fName" id="lblName">Name</label>
+                    <input type="text" id="fName" placeholder="Full Name" required>
+                </div>
+                <div class="field-block" data-field="headline">
+                    <label for="fHeadline" id="lblHeadline">Professional Role</label>
+                    <input type="text" id="fHeadline" placeholder="Professional Headline (e.g. Senior Accountant)">
+                </div>
+                <div class="field-block" data-field="email">
+                    <label for="fEmail" id="lblEmail">Email</label>
+                    <input type="email" id="fEmail" placeholder="Email Address" required>
+                </div>
+                <div class="field-block" data-field="phone">
+                    <label for="fPhone" id="lblPhone">Phone</label>
+                    <input type="text" id="fPhone" placeholder="Phone Number" required>
+                </div>
+                <div class="field-block" data-field="location">
+                    <label for="fLocation" id="lblLocation">Location</label>
+                    <input type="text" id="fLocation" placeholder="City, Country / Address" required>
+                </div>
+                <div class="field-block" data-field="website">
+                    <label for="fWebsite" id="lblWebsite">Website</label>
+                    <input type="text" id="fWebsite" placeholder="Portfolio / Website URL">
+                </div>
+                <div class="field-block" data-field="summary">
+                    <label for="fSummary" id="lblSummary">About Me</label>
+                    <textarea id="fSummary" placeholder="Write short profile text"></textarea>
+                </div>
+                <div class="field-block" data-field="skills">
+                    <label for="fSkills" id="lblSkills">Skills</label>
+                    <textarea id="fSkills" placeholder="Top Skills (comma separated)"></textarea>
+                </div>
+                <div class="field-block" data-field="side_skills">
+                    <label for="fSideSkills" id="lblSideSkills">Personal Skills</label>
+                    <textarea id="fSideSkills" placeholder="Leadership, Communication, Time Management"></textarea>
+                </div>
+                <div class="field-block" data-field="languages">
+                    <label for="fLanguages" id="lblLanguages">Languages</label>
+                    <textarea id="fLanguages" placeholder="English - Fluent, Spanish - Fluent"></textarea>
+                </div>
+                <div class="field-block" data-field="experience">
+                    <label for="fExp" id="lblExperience">Work Experience</label>
+                    <textarea id="fExp" placeholder="Use blank lines to separate entries"></textarea>
+                </div>
+                <div class="field-block" data-field="education">
+                    <label for="fEdu" id="lblEducation">Education</label>
+                    <textarea id="fEdu" placeholder="Use blank lines to separate entries"></textarea>
+                </div>
                 
-                <label>Template Choice</label>
-                <select id="fTemplate" style="width:100%;padding:10px;margin-bottom:15px;border-radius:8px;">
-                    <option value="Classic ATS">Classic ATS</option>
-                    <option value="Modern Minimalist">Modern Minimalist</option>
-                    <option value="Executive">Executive</option>
+                <select id="fTemplate" style="display:none;">
+                    <option value="classical.pdf" selected>classical.pdf</option>
+                    <option value="freasher.pdf">freasher.pdf</option>
+                    <option value="resume for experienced.pdf">resume for experienced.pdf</option>
+                    <option value="resume for experienced2.pdf">resume for experienced2.pdf</option>
                 </select>
                 
                 <button type="submit" class="btn-primary" style="width:100%;">Build Resume & Get Gemini Feedback</button>
             </form>
             <div id="fStatus" class="status"></div>
         </article>
-        <article class="card">
-            <h2>Generated Output</h2>
-            <div id="fGemini" style="white-space:pre-wrap;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:12px;margin-bottom:15px;display:none;"></div>
-            <div id="fDownloads" style="display:flex;gap:10px;margin-bottom:15px;"></div>
-            <pre id="fPreview" style="white-space:pre-wrap;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;min-height:300px;">Preview will appear here</pre>
-            
-            <button class="btn-primary" onclick="window.location.href='jobs.html'" style="margin-top:20px;background:#0f9d58;display:none;" id="toJobsBtnForm">Proceed to Live Jobs!</button>
-        </article>
     </section>
 </main>
+
+<footer class="footer">
+    <p>&copy; 2026 AI Resume Platform</p>
+    <div>
+        <a href="upload.html">ATS Benchmark</a>
+        <a href="maker_options.html">Resume Maker Hub</a>
+        <a href="jobs.html">Market Pipeline</a>
+    </div>
+</footer>
+
 <script src="../js/app.js"></script>
 </body>
 </html>

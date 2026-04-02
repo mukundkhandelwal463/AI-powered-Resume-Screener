@@ -1,5 +1,8 @@
 flask
 flask-cors
+flask-sqlalchemy
+pymysql
+google-auth
 numpy
 pandas
 scikit-learn

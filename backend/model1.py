@@ -243,24 +243,35 @@ class ResumeModelService:
         self.classifier: Pipeline | None = None
         self.vectorizer = TfidfVectorizer(stop_words="english")
         self.available_categories: set[str] = set()
+        self.category_reference_text: Dict[str, str] = {}
         self._fit_classifier_if_possible()
 
     def _fit_classifier_if_possible(self) -> None:
         if pd is None or not os.path.exists(self.dataset_path):
             self.classifier = None
+            self.category_reference_text = {}
             return
 
         try:
             df = pd.read_csv(self.dataset_path)
             if {"Resume", "Category"} - set(df.columns):
                 self.classifier = None
+                self.category_reference_text = {}
                 return
 
             df = df.dropna(subset=["Resume", "Category"]).copy()
             self.available_categories = set(df["Category"].astype(str).str.strip().str.lower().tolist())
             df["Resume"] = df["Resume"].astype(str).map(clean_text)
+            self.category_reference_text = {}
+            grouped = df.groupby("Category")["Resume"]
+            for category, resumes in grouped:
+                key = str(category).strip().lower()
+                samples = resumes.head(40).tolist()
+                merged = " ".join(samples)
+                self.category_reference_text[key] = merged[:120000]
             if df.empty:
                 self.classifier = None
+                self.category_reference_text = {}
                 return
 
             self.classifier = Pipeline(
@@ -273,6 +284,7 @@ class ResumeModelService:
         except Exception:
             self.classifier = None
             self.available_categories = set()
+            self.category_reference_text = {}
 
     def has_category_in_dataset(self, category: str) -> bool:
         normalized = (category or "").strip().lower()
@@ -320,6 +332,49 @@ class ResumeModelService:
         # Weighted combination
         final_score = (keyword_score * 0.60) + (cosine_score * 0.30) + (skill_score * 0.10)
         return round(min(float(final_score), 100.0), 2)
+
+    def estimate_ats_without_jd(self, resume_text: str, stream_or_category: str = "") -> float:
+        cleaned_resume = clean_text(strip_resume_noise(resume_text))
+        if not cleaned_resume:
+            return 0.0
+
+        target_category = (stream_or_category or "").strip()
+        normalized_target = target_category.lower()
+        if not normalized_target or normalized_target not in self.category_reference_text:
+            target_category = self.classify_resume(resume_text)
+            normalized_target = target_category.strip().lower()
+
+        reference_text = self.category_reference_text.get(normalized_target, "")
+        if reference_text:
+            cleaned_ref = clean_text(reference_text)
+            ref_keywords = set(top_keywords_from_text(cleaned_ref, top_n=40))
+            resume_keywords = set(top_keywords_from_text(cleaned_resume, top_n=100))
+            if ref_keywords:
+                keyword_score = (len(ref_keywords.intersection(resume_keywords)) / len(ref_keywords)) * 100
+            else:
+                keyword_score = 0.0
+
+            ref_skills = set(extract_skills(cleaned_ref))
+            resume_skills_set = set(extract_skills(cleaned_resume))
+            if ref_skills:
+                skill_score = (len(ref_skills.intersection(resume_skills_set)) / len(ref_skills)) * 100
+            else:
+                skill_score = keyword_score
+
+            vectors = self.vectorizer.fit_transform([cleaned_resume, cleaned_ref])
+            cosine_score = cosine_similarity(vectors[0:1], vectors[1:2])[0][0] * 100
+            final_score = (keyword_score * 0.50) + (cosine_score * 0.30) + (skill_score * 0.20)
+            return round(min(max(float(final_score), 0.0), 100.0), 2)
+
+        # Fallback heuristic if dataset profile is unavailable.
+        skills_found = len(extract_skills(cleaned_resume))
+        word_count = len(cleaned_resume.split())
+        skills_score = min((skills_found / 12.0) * 40.0, 40.0)
+        length_score = min((word_count / 500.0) * 35.0, 35.0)
+        project_bonus = 10.0 if "project" in cleaned_resume else 0.0
+        metric_bonus = 8.0 if re.search(r"\b\d+%|\b\d+\b", cleaned_resume) else 0.0
+        final_score = 7.0 + skills_score + length_score + project_bonus + metric_bonus
+        return round(min(max(final_score, 0.0), 92.0), 2)
 
     def analyze_resume(self, resume_text: str, job_description: str = "") -> ResumeAnalysis:
         category = self.classify_resume(resume_text)
@@ -430,6 +485,7 @@ class ResumeModelService:
 
 CHATBOT_QUESTIONS = [
     {"key": "full_name", "question": "What is your full name?"},
+    {"key": "headline", "question": "What is your professional headline? (Example: Senior Accountant)"},
     {"key": "email", "question": "What is your email address?"},
     {"key": "phone", "question": "What is your phone number?"},
     {"key": "location", "question": "Where are you located?"},
@@ -442,23 +498,34 @@ CHATBOT_QUESTIONS = [
 
 def build_resume_from_answers(answers: Dict[str, str]) -> str:
     name = answers.get("full_name", "Candidate")
+    headline = answers.get("headline", "")
     email = answers.get("email", "")
     phone = answers.get("phone", "")
     location = answers.get("location", "")
+    website = answers.get("website", "")
     summary = answers.get("summary", "")
     skills = answers.get("skills", "")
+    side_skills = answers.get("side_skills", "")
+    languages = answers.get("languages", "")
     experience = answers.get("experience", "")
     education = answers.get("education", "")
 
     lines = [
         name,
-        f"Email: {email} | Phone: {phone} | Location: {location}",
+        headline,
+        f"Email: {email} | Phone: {phone} | Location: {location} | Website: {website}",
         "",
         "PROFESSIONAL SUMMARY",
         summary,
         "",
         "SKILLS",
         skills,
+        "",
+        "PERSONAL SKILLS",
+        side_skills,
+        "",
+        "LANGUAGES",
+        languages,
         "",
         "EXPERIENCE",
         experience,

@@ -4,11 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analysis Results - AI Resume Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
 <header class="navbar">
-    <a class="logo" href="home.html">AIResume</a>
+    <a class="brand" href="home.html">
+        <span class="brand-mark">AR</span>
+        <div>
+            <strong>AIResume</strong>
+            <span>Intelligent Career Pipeline</span>
+        </div>
+    </a>
     <nav class="nav-links">
         <a href="home.html">Home</a>
         <a href="upload.html">ATS Score</a>
@@ -18,13 +27,14 @@
 </header>
 
 <main class="page" id="resultPage">
+    <p style="color:var(--accent-deep);font-size:0.82rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;">Analysis Complete</p>
     <h1>Resume Analysis Result</h1>
 
     <div id="resultEmpty" class="status info" style="display:none;">
         No analysis result found. Go to Analyze page and submit a resume.
     </div>
 
-    <section class="card" style="margin-bottom:18px;">
+    <section class="card" style="margin-bottom:22px;">
         <h2>Summary</h2>
         <div class="result-grid">
             <div class="metric">
@@ -53,12 +63,21 @@
         </article>
     </section>
 
-    <div id="decisionBox" style="margin-top:20px;padding:26px;border-radius:12px;background:#f0fdf4;border:1px solid #d9f99d;text-align:center;display:none;box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
-        <h2 id="decisionTitle" style="margin-top:0;">Analyzing Your Next Steps...</h2>
-        <p style="color:#4b5563;margin-bottom:14px;">Our dynamic Model Pipeline determines exactly where you should proceed next.</p>
+    <div id="decisionBox" style="margin-top:22px;padding:30px;border-radius:var(--radius-lg);background:linear-gradient(135deg, rgba(124,214,199,0.15), rgba(255,255,255,0.8));border:1px solid rgba(124,214,199,0.3);text-align:center;display:none;backdrop-filter:blur(12px);box-shadow:var(--shadow);">
+        <h2 id="decisionTitle" style="margin-top:0;font-family:'Sora',sans-serif;">Analyzing Your Next Steps...</h2>
+        <p style="color:var(--muted);margin-bottom:18px;">Our dynamic Model Pipeline determines exactly where you should proceed next.</p>
         <button id="decisionBtn" class="btn-primary" style="font-size:18px;min-width:250px;"></button>
     </div>
 </main>
+
+<footer class="footer">
+    <p>&copy; 2026 AI Resume Platform</p>
+    <div>
+        <a href="upload.html">ATS Benchmark</a>
+        <a href="maker_options.html">Resume Maker Hub</a>
+        <a href="jobs.html">Market Pipeline</a>
+    </div>
+</footer>
 
 <script src="../js/app.js"></script>
 </body>

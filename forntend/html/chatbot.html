@@ -4,11 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Resume Builder Chatbot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
 <header class="navbar">
-    <a class="logo" href="home.html">AIResume</a>
+    <a class="brand" href="home.html">
+        <span class="brand-mark">AR</span>
+        <div>
+            <strong>AIResume</strong>
+            <span>Intelligent Career Pipeline</span>
+        </div>
+    </a>
     <nav class="nav-links">
         <a href="home.html">Home</a>
         <a href="upload.html">ATS Score</a>
@@ -18,38 +27,51 @@
 </header>
 
 <main class="page" id="chatbotPage">
-    <h1>AI Resume Builder (Chatbot)</h1>
+    <p style="color:var(--accent-deep);font-size:0.82rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;">Chatbot Mode</p>
+    <h1>AI Resume Builder</h1>
     <section class="grid two">
         <article class="card">
             <h2>Conversation</h2>
             
             <label for="templateChoice">Template Style</label>
-            <select id="templateChoice" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;margin-bottom:14px;font-size:14px;">
-                <option value="Classic ATS">Classic ATS</option>
-                <option value="Modern Minimalist">Modern Minimalist</option>
-                <option value="Executive">Executive</option>
+            <select id="templateChoice">
+                <option value="classical.pdf">classical.pdf</option>
+                <option value="freasher.pdf">freasher.pdf</option>
+                <option value="resume for experienced.pdf">resume for experienced.pdf</option>
+                <option value="resume for experienced2.pdf">resume for experienced2.pdf</option>
             </select>
             
             <div id="chatbox" class="chat-box"></div>
 
             <label for="userInput">Your answer</label>
             <input type="text" id="userInput" placeholder="Type your answer">
-            <button class="btn-primary" id="sendBtn" type="button">Send</button>
-            <button class="btn-secondary" id="generateBtn" type="button" disabled>Generate Resume</button>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn-primary" id="sendBtn" type="button">Send</button>
+                <button class="btn-secondary" id="generateBtn" type="button" disabled>Generate Resume</button>
+            </div>
             <div id="chatStatus" class="status"></div>
         </article>
 
         <article class="card">
             <h2>Generated Resume Hub</h2>
-            <div id="geminiSuggestions" style="white-space:pre-wrap;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:12px;margin-bottom:15px;display:none;"></div>
+            <div id="geminiSuggestions" style="white-space:pre-wrap;background:var(--accent-soft);border:1px solid rgba(225,75,41,0.15);border-radius:var(--radius-md);padding:14px;margin-bottom:15px;display:none;"></div>
             <div style="display:flex;gap:10px;margin-bottom:15px;" id="downloadActions"></div>
-            <pre id="generatedResume" style="white-space:pre-wrap;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;min-height:220px;"></pre>
+            <pre id="generatedResume" style="white-space:pre-wrap;background:rgba(255,255,255,0.5);border:1px solid rgba(24,35,38,0.08);border-radius:var(--radius-md);padding:14px;min-height:220px;font-family:'Manrope',sans-serif;font-size:14px;"></pre>
 
-            <h3>Recommended Jobs</h3>
+            <h3 style="font-family:'Sora',sans-serif;">Recommended Jobs</h3>
             <ul id="chatJobs" class="list"></ul>
         </article>
     </section>
 </main>
+
+<footer class="footer">
+    <p>&copy; 2026 AI Resume Platform</p>
+    <div>
+        <a href="upload.html">ATS Benchmark</a>
+        <a href="maker_options.html">Resume Maker Hub</a>
+        <a href="jobs.html">Market Pipeline</a>
+    </div>
+</footer>
 
 <script src="../js/app.js"></script>
 </body>

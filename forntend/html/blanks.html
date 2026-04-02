@@ -3,11 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>Blank Templates - AIResume</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
 <header class="navbar">
-    <a class="logo" href="home.html">AIResume</a>
+    <a class="brand" href="home.html">
+        <span class="brand-mark">AR</span>
+        <div>
+            <strong>AIResume</strong>
+            <span>Intelligent Career Pipeline</span>
+        </div>
+    </a>
     <nav class="nav-links">
         <a href="home.html">Home</a>
         <a href="upload.html">ATS Score</a>
@@ -16,22 +25,33 @@
     </nav>
 </header>
 <main class="page" id="blanksPage" style="text-align: center;">
+    <p style="color:var(--accent-deep);font-size:0.82rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;">Templates</p>
     <h1>Download Blank ATS Templates</h1>
-    <p>Download our perfectly structured, empty formats in Word/PDF to edit independently entirely on your own without uploading data.</p>
+    <p style="color:var(--muted);max-width:55ch;margin:0 auto 30px;line-height:1.7;">Download our perfectly structured, empty formats in Word/PDF to edit independently entirely on your own without uploading data.</p>
     
-    <div style="margin-top:30px;">
-        <h3>Select Template</h3>
-        <select id="blankTemplate" style="padding:10px;font-size:16px;border-radius:8px;min-width:250px;">
-            <option value="Classic ATS">Classic ATS</option>
-            <option value="Modern Minimalist">Modern Minimalist</option>
-            <option value="Executive">Executive</option>
+    <div class="card" style="max-width:500px;margin:0 auto;">
+        <h2 style="text-align:left;">Select Template</h2>
+        <select id="blankTemplate">
+            <option value="classical.pdf">classical.pdf</option>
+            <option value="freasher.pdf">freasher.pdf</option>
+            <option value="resume for experienced.pdf">resume for experienced.pdf</option>
+            <option value="resume for experienced2.pdf">resume for experienced2.pdf</option>
         </select>
-        <br><br>
-        <button id="downloadBlanksBtn" class="btn-primary" style="font-size:18px;">Fetch Selected Blanks</button>
-        <div id="blankStatus" class="status" style="width:50%;margin:20px auto;"></div>
-        <div id="blankDownloads" style="margin-top:20px;display:flex;gap:15px;justify-content:center;"></div>
+        <button id="downloadBlanksBtn" class="btn-primary" style="width:100%;margin-top:8px;">Fetch Selected Blanks</button>
+        <div id="blankStatus" class="status" style="margin-top:14px;"></div>
+        <div id="blankDownloads" style="margin-top:16px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;"></div>
     </div>
 </main>
+
+<footer class="footer">
+    <p>&copy; 2026 AI Resume Platform</p>
+    <div>
+        <a href="upload.html">ATS Benchmark</a>
+        <a href="maker_options.html">Resume Maker Hub</a>
+        <a href="jobs.html">Market Pipeline</a>
+    </div>
+</footer>
+
 <script src="../js/app.js"></script>
 </body>
 </html>

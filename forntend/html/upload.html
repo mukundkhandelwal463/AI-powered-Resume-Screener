@@ -4,37 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ATS Score - AI Resume Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
-    <style>
-        .drop-zone {
-            border: 2px dashed #cbd5e1;
-            border-radius: 12px;
-            padding: 40px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: #f8fafc;
-            margin-bottom: 20px;
-        }
-        .drop-zone:hover, .drop-zone.dragover {
-            border-color: #2563eb;
-            background: #eef2ff;
-            transform: scale(1.01);
-        }
-        .drop-zone .icon { font-size: 48px; margin-bottom: 10px; }
-        .drop-zone .label { font-size: 16px; color: #64748b; }
-        .drop-zone .label strong { color: #2563eb; }
-        .drop-zone .file-name {
-            margin-top: 10px;
-            font-weight: 600;
-            color: #059669;
-            display: none;
-        }
-    </style>
 </head>
 <body>
 <header class="navbar">
-    <a class="logo" href="home.html">AIResume</a>
+    <a class="brand" href="home.html">
+        <span class="brand-mark">AR</span>
+        <div>
+            <strong>AIResume</strong>
+            <span>Intelligent Career Pipeline</span>
+        </div>
+    </a>
     <nav class="nav-links">
         <a href="home.html">Home</a>
         <a class="active" href="upload.html">ATS Score</a>
@@ -44,8 +27,7 @@
 </header>
 
 <main class="page">
-    <h1>ATS Resume Analyzer</h1>
-    <p style="color:#64748b;margin-bottom:30px;">Upload your resume and optionally add Category/Stream + target job description. The engine will choose dataset or Gemini mode automatically.</p>
+    <h1 style="text-align:center;font-size:clamp(2.2rem,5vw,3.2rem);margin-bottom:36px;">ATS Resume Analyzer</h1>
 
     <article class="card" style="max-width:700px;margin:0 auto;">
         <form id="analyzeForm">
@@ -70,6 +52,15 @@
         <div id="status" class="status"></div>
     </article>
 </main>
+
+<footer class="footer">
+    <p>&copy; 2026 AI Resume Platform</p>
+    <div>
+        <a href="upload.html">ATS Benchmark</a>
+        <a href="maker_options.html">Resume Maker Hub</a>
+        <a href="jobs.html">Market Pipeline</a>
+    </div>
+</footer>
 
 <script src="../js/app.js"></script>
 <script>

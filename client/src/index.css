@@ -1,0 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap');
+@import "tailwindcss";
+
+* {
+  font-family: "Manrope", sans-serif;
+}
+
+h1, h2, h3, .font-heading {
+  font-family: "Sora", sans-serif;
+}
+
+@layer base {
+  button {
+    @apply cursor-pointer transition-all duration-200 ease-in-out;
+  }
+
+  input:not([type="checkbox"]) {
+    @apply outline-none border border-stone-200 rounded-xl px-3 py-2 transition-all duration-200 ease-in-out focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 shadow-sm hover:border-stone-300;
+  }
+
+  textarea {
+    @apply outline-none border border-stone-200 rounded-xl px-3 py-2 resize-none transition-all duration-200 ease-in-out focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 shadow-sm hover:border-stone-300;
+  }
+}
