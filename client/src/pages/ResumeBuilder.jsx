@@ -13,6 +13,7 @@ import TemplateSelector from '../Components/TemplateSelector.jsx'
 import EducationForm from '../Components/EducationForm.jsx'
 import ProjectForm from '../Components/ProjectForm.jsx'
 import ProfessionalSummaryForm from '../Components/ProfessionalSummaryForm.jsx'
+import CertificationForm from '../Components/CertificationForm.jsx'
 
 import FontSizePicker from '../Components/FontSizePicker.jsx'
 import KeywordForm from '../Components/KeywordForm.jsx'
@@ -30,6 +31,7 @@ const ResumeBuilder = () => {
     experience: [],
     education: [],
     project: [],
+    certifications: [],
     skills: [],
     keywords: [],
     template: 'classic',
@@ -74,8 +76,8 @@ const ResumeBuilder = () => {
     { id: 'experience', name: 'Experience', icon: Briefcase },
     { id: 'education', name: 'Education', icon: GraduationCap },
     { id: 'project', name: 'Project', icon: FolderIcon },
-    { id: 'skills', name: 'Skills', icon: Sparkle },
-    { id: 'keywords', name: 'ATS Keywords', icon: Target },
+    { id: 'certifications', name: 'Certifications', icon: Sparkle },
+    { id: 'skills', name: 'Skills & Keywords', icon: Target },
   ]
 
   const activeSection = sections[activeSectionIndex];
@@ -289,8 +291,8 @@ const ResumeBuilder = () => {
                   {activeSection.id === 'experience' && <ExperienceForm data={resumeData.experience || []} onChange={(d) => setResumeData(p => ({ ...p, experience: d }))} />}
                   {activeSection.id === 'education' && <EducationForm data={resumeData.education || []} onChange={(d) => setResumeData(p => ({ ...p, education: d }))} />}
                   {activeSection.id === 'project' && <ProjectForm data={resumeData.project || []} onChange={(d) => setResumeData(p => ({ ...p, project: d }))} />}
+                  {activeSection.id === 'certifications' && <CertificationForm data={resumeData.certifications || []} onChange={(d) => setResumeData(p => ({ ...p, certifications: d }))} />}
                   {activeSection.id === 'skills' && <SkillForm data={resumeData.skills || []} onChange={(d) => setResumeData(p => ({ ...p, skills: d }))} />}
-                  {activeSection.id === 'keywords' && <KeywordForm atsAnalysis={JSON.parse(localStorage.getItem('resume_analysis_result') || '{}')?.analysis} data={resumeData.keywords || []} onChange={(d) => setResumeData(p => ({ ...p, keywords: d }))} />}
                 </div>
               </div>
 

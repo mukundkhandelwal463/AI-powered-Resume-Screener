@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard - AIResume</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 28px;
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        /* Profile Sidebar */
+        .profile-sidebar {
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.55);
+            backdrop-filter: blur(16px);
+            border-radius: var(--radius-xl);
+            padding: 36px 28px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+        .profile-avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #ff8f57);
+            color: white;
+            font-family: "Sora", sans-serif;
+            font-size: 36px;
+            font-weight: 800;
+            display: grid;
+            place-items: center;
+            margin: 0 auto 16px;
+            box-shadow: 0 12px 32px rgba(255, 107, 74, 0.25);
+        }
+        .profile-name {
+            font-family: "Sora", sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0 0 4px;
+        }
+        .profile-email {
+            color: var(--muted);
+            font-size: 0.88rem;
+            margin: 0 0 6px;
+        }
+        .profile-badge {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin: 8px 0 20px;
+        }
+        .badge-verified {
+            background: rgba(124, 214, 199, 0.2);
+            color: #14532d;
+        }
+        .badge-unverified {
+            background: rgba(255, 107, 74, 0.12);
+            color: #7f1d1d;
+        }
+        .profile-meta {
+            text-align: left;
+            border-top: 1px solid rgba(24, 35, 38, 0.06);
+            padding-top: 18px;
+            margin-top: 6px;
+        }
+        .profile-meta-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 9px 0;
+            font-size: 0.88rem;
+        }
+        .profile-meta-item span:first-child {
+            color: var(--muted);
+        }
+        .profile-meta-item span:last-child {
+            font-weight: 700;
+        }
+        .profile-actions {
+            margin-top: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .profile-actions .btn-primary {
+            text-decoration: none;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .logout-btn-sm {
+            border: 1px solid rgba(24, 35, 38, 0.1);
+            background: rgba(255,255,255,0.62);
+            padding: 10px 20px;
+            border-radius: 999px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: "Manrope", sans-serif;
+            font-size: 0.88rem;
+        }
+        .logout-btn-sm:hover {
+            background: rgba(255,107,74,0.08);
+            border-color: var(--accent);
+            color: var(--accent-deep);
+        }
+
+        /* Main Content */
+        .dashboard-main {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Stats Cards */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.55);
+            backdrop-filter: blur(16px);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.08);
+        }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            margin: 0 auto 12px;
+            font-size: 22px;
+        }
+        .stat-icon.resumes { background: rgba(255, 107, 74, 0.12); }
+        .stat-icon.score { background: rgba(124, 214, 199, 0.2); }
+        .stat-icon.best { background: rgba(255, 193, 7, 0.15); }
+        .stat-value {
+            font-family: "Sora", sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 0;
+        }
+        .stat-label {
+            color: var(--muted);
+            font-size: 0.82rem;
+            margin: 4px 0 0;
+            font-weight: 600;
+        }
+
+        /* Activity Section */
+        .activity-card {
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.55);
+            backdrop-filter: blur(16px);
+            border-radius: var(--radius-xl);
+            padding: 30px;
+            box-shadow: var(--shadow);
+        }
+        .activity-card h2 {
+            font-family: "Sora", sans-serif;
+            font-size: 1.2rem;
+            margin: 0 0 20px;
+        }
+        .activity-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(24, 35, 38, 0.06);
+            transition: background 0.2s;
+        }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-item:hover {
+            background: rgba(255, 107, 74, 0.03);
+            border-radius: var(--radius-md);
+            padding-left: 10px;
+            margin-left: -10px;
+        }
+        .activity-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .dot-high { background: #22c55e; }
+        .dot-mid { background: #f59e0b; }
+        .dot-low { background: #ef4444; }
+        .activity-info {
+            flex: 1;
+        }
+        .activity-title {
+            font-weight: 700;
+            font-size: 0.92rem;
+            margin: 0;
+        }
+        .activity-date {
+            color: var(--muted);
+            font-size: 0.78rem;
+            margin: 2px 0 0;
+        }
+        .activity-score {
+            font-family: "Sora", sans-serif;
+            font-weight: 800;
+            font-size: 1.1rem;
+            padding: 6px 16px;
+            border-radius: 999px;
+            background: rgba(124, 214, 199, 0.15);
+            color: #14532d;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+        }
+        .empty-state p { font-size: 0.95rem; margin: 8px 0 18px; }
+        .empty-icon {
+            font-size: 48px;
+            opacity: 0.4;
+        }
+
+        /* Quick Links */
+        .quick-links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .quick-link {
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.55);
+            backdrop-filter: blur(16px);
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            box-shadow: var(--shadow);
+            text-decoration: none;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .quick-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+        }
+        .quick-link-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+            background: linear-gradient(135deg, var(--accent), #ff8f57);
+            color: white;
+        }
+        .quick-link-text strong {
+            display: block;
+            font-size: 0.95rem;
+        }
+        .quick-link-text span {
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            .profile-sidebar {
+                position: static;
+            }
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+            .quick-links {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(24,35,38,0.06) 25%, rgba(24,35,38,0.12) 50%, rgba(24,35,38,0.06) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body>
+<header class="navbar">
+    <a class="brand" href="home.html">
+        <span class="brand-mark">AR</span>
+        <div>
+            <strong>AIResume</strong>
+            <span>Intelligent Career Pipeline</span>
+        </div>
+    </a>
+    <nav class="nav-links">
+        <a href="home.html">Home</a>
+        <a href="upload.html">ATS Score</a>
+        <a href="maker_options.html">Resume Maker</a>
+        <a href="jobs.html">Live Jobs</a>
+        <a href="profile.html" style="color: var(--accent-deep); font-weight:800;">Dashboard</a>
+    </nav>
+</header>
+
+<main class="page">
+    <div class="dashboard-grid">
+        <!-- Sidebar -->
+        <aside class="profile-sidebar" id="profileSidebar">
+            <div class="profile-avatar" id="avatarLetter">—</div>
+            <h2 class="profile-name" id="profileName">Loading…</h2>
+            <p class="profile-email" id="profileEmail">…</p>
+            <span class="profile-badge badge-verified" id="profileBadge">Verified ✓</span>
+
+            <div class="profile-meta">
+                <div class="profile-meta-item">
+                    <span>Member since</span>
+                    <span id="memberSince">—</span>
+                </div>
+                <div class="profile-meta-item">
+                    <span>Mobile</span>
+                    <span id="profileMobile">—</span>
+                </div>
+                <div class="profile-meta-item">
+                    <span>Fields</span>
+                    <span id="profileCategories">—</span>
+                </div>
+            </div>
+
+            <div class="profile-actions">
+                <a href="upload.html" class="btn-primary">Check ATS Score</a>
+                <a href="maker_options.html" class="btn-primary" style="background:linear-gradient(135deg,#1e2d30,#35575c);">Build Resume</a>
+                <button class="logout-btn-sm" onclick="handleLogout()">Sign Out</button>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <div class="dashboard-main">
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon resumes">📄</div>
+                    <p class="stat-value" id="totalResumes">0</p>
+                    <p class="stat-label">Total Resumes</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon score">📊</div>
+                    <p class="stat-value" id="avgScore">0</p>
+                    <p class="stat-label">Avg ATS Score</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon best">🏆</div>
+                    <p class="stat-value" id="bestScore">0</p>
+                    <p class="stat-label">Best Score</p>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="quick-links">
+                <a href="upload.html" class="quick-link">
+                    <div class="quick-link-icon">📤</div>
+                    <div class="quick-link-text">
+                        <strong>Upload & Analyze</strong>
+                        <span>Check your ATS compatibility score</span>
+                    </div>
+                </a>
+                <a href="maker_options.html" class="quick-link">
+                    <div class="quick-link-icon">✏️</div>
+                    <div class="quick-link-text">
+                        <strong>Resume Maker</strong>
+                        <span>Build a professional resume</span>
+                    </div>
+                </a>
+                <a href="jobs.html" class="quick-link">
+                    <div class="quick-link-icon">💼</div>
+                    <div class="quick-link-text">
+                        <strong>Live Jobs</strong>
+                        <span>Browse recommended job listings</span>
+                    </div>
+                </a>
+                <a href="chatbot.html" class="quick-link">
+                    <div class="quick-link-icon">🤖</div>
+                    <div class="quick-link-text">
+                        <strong>AI Chatbot</strong>
+                        <span>Get career advice from AI</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="activity-card">
+                <h2>Recent Activity</h2>
+                <ul class="activity-list" id="activityList">
+                    <li class="empty-state" id="emptyState">
+                        <div class="empty-icon">📋</div>
+                        <p>No activity yet. Upload a resume to get started!</p>
+                        <a href="upload.html" class="btn-primary" style="text-decoration:none;">Upload Now</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <p>&copy; 2026 AI Resume Platform</p>
+    <div>
+        <a href="upload.html">ATS Benchmark</a>
+        <a href="maker_options.html">Resume Maker Hub</a>
+        <a href="jobs.html">Market Pipeline</a>
+    </div>
+</footer>
+
+<script>
+const API = "";
+
+async function loadDashboard() {
+    try {
+        const res = await fetch(API + "/api/dashboard");
+        const data = await res.json();
+
+        if (!data.success) {
+            window.location.href = "/login.html";
+            return;
+        }
+
+        const user = data.user;
+        const stats = data.stats;
+        const activity = data.recent_activity;
+
+        // Profile sidebar
+        document.getElementById("avatarLetter").textContent = (user.full_name || "U")[0].toUpperCase();
+        document.getElementById("profileName").textContent = user.full_name;
+        document.getElementById("profileEmail").textContent = user.email;
+        document.getElementById("profileMobile").textContent = user.mobile || "Not set";
+
+        const badge = document.getElementById("profileBadge");
+        if (user.is_verified) {
+            badge.textContent = "Verified ✓";
+            badge.className = "profile-badge badge-verified";
+        } else {
+            badge.textContent = "Unverified";
+            badge.className = "profile-badge badge-unverified";
+        }
+
+        if (user.created_at) {
+            const d = new Date(user.created_at);
+            document.getElementById("memberSince").textContent = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        }
+
+        document.getElementById("profileCategories").textContent = stats.categories.length > 0 ? stats.categories.join(", ") : "—";
+
+        // Stats
+        animateCounter("totalResumes", stats.total_resumes);
+        animateCounter("avgScore", stats.avg_score);
+        animateCounter("bestScore", stats.best_score);
+
+        // Activity
+        if (activity.length > 0) {
+            const list = document.getElementById("activityList");
+            list.innerHTML = "";
+            activity.forEach(item => {
+                const score = item.ats_score || 0;
+                let dotClass = "dot-low";
+                if (score >= 70) dotClass = "dot-high";
+                else if (score >= 40) dotClass = "dot-mid";
+
+                const li = document.createElement("li");
+                li.className = "activity-item";
+                li.innerHTML = `
+                    <div class="activity-dot ${dotClass}"></div>
+                    <div class="activity-info">
+                        <p class="activity-title">${item.title}</p>
+                        <p class="activity-date">${item.category || "General"} • ${item.date}</p>
+                    </div>
+                    ${item.ats_score ? `<span class="activity-score">${Math.round(item.ats_score)}%</span>` : ""}
+                `;
+                list.appendChild(li);
+            });
+        }
+    } catch (err) {
+        console.error("Dashboard error:", err);
+        window.location.href = "/login.html";
+    }
+}
+
+function animateCounter(id, target) {
+    const el = document.getElementById(id);
+    const duration = 800;
+    const start = performance.now();
+    const from = 0;
+
+    function tick(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        const current = Math.round(from + (target - from) * eased);
+        el.textContent = current;
+        if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+}
+
+async function handleLogout() {
+    await fetch(API + "/api/auth/logout", { method: "POST" });
+    window.location.href = "/login.html";
+}
+
+document.addEventListener("DOMContentLoaded", loadDashboard);
+</script>
+</body>
+</html>

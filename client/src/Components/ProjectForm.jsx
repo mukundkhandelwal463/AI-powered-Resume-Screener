@@ -83,21 +83,35 @@ const ProjectForm = ({ data, onChange }) => {
                                 <label className="text-xs font-medium text-gray-500 uppercase">Project Type</label>
                                 <input value={project.type || ""} onChange={(e) => updateProject(index, 'type', e.target.value)} type="text" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g. Web App" />
                             </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-medium text-gray-500 uppercase">Date (e.g. Jan 2024)</label>
+                                <input value={project.date || ""} onChange={(e) => updateProject(index, 'date', e.target.value)} type="text" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g. Jan 2024" />
+                            </div>
                             <div className="col-span-1 md:col-span-2 space-y-1">
                                 <label className="text-xs font-medium text-gray-500 uppercase">Repo / Live Link</label>
                                 <input value={project.link || ""} onChange={(e) => updateProject(index, 'link', e.target.value)} type="text" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g. github.com/username/project" />
                             </div>
-                            <div className="col-span-1 md:col-span-2 space-y-1">
-                                <label className="text-xs font-medium text-gray-500 uppercase">Description</label>
-                                <button 
-                                    onClick={() => handleEnhance(index, project.description)}
-                                    disabled={enhancingIdx === index || !(project.description || "").trim()}
-                                    className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-md text-xs hover:bg-blue-100 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <Sparkles className={`size-4 ${enhancingIdx === index ? 'animate-pulse' : ''}`} />
-                                    {enhancingIdx === index ? 'Enhancing...' : 'Enhance with AI'}
-                                </button>
-                                <textarea value={project.description || ""} onChange={(e) => updateProject(index, 'description', e.target.value)} rows="3" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y" placeholder="Describe your responsibilities and achievements..."></textarea>
+                            <div className="col-span-1 md:col-span-2 space-y-2">
+                                <label className="text-xs font-medium text-gray-500 uppercase">Key Points (max 4 bullets)</label>
+                                {[0, 1, 2, 3].map((bIdx) => {
+                                    const bullets = (project.description || '').split('\n').filter(l => l.trim());
+                                    return (
+                                        <div key={bIdx} className="flex items-center gap-2">
+                                            <span className="text-gray-400 text-sm font-bold flex-shrink-0">•</span>
+                                            <input
+                                                value={bullets[bIdx] || ''}
+                                                onChange={(e) => {
+                                                    const newBullets = [0,1,2,3].map(i => i === bIdx ? e.target.value : (bullets[i] || ''));
+                                                    updateProject(index, 'description', newBullets.filter(b => b.trim()).join('\n'));
+                                                }}
+                                                type="text"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                                placeholder={`Point ${bIdx + 1} (max 2 lines)`}
+                                                maxLength={160}
+                                            />
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>

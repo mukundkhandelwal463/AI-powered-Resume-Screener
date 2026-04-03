@@ -857,7 +857,7 @@ def generate_docx_from_builder(data):
         p.paragraph_format.space_after = Pt(4)
         run = p.add_run(title.upper())
         run.bold = True
-        run.font.size = Pt(13)
+        run.font.size = Pt(11)
         run.font.color.rgb = accent
         add_horizontal_rule()
 
@@ -878,7 +878,7 @@ def generate_docx_from_builder(data):
     name_pg.paragraph_format.space_after = Pt(2)
     name_run = name_pg.add_run(pi.get("full_name", "") or "Your Name")
     name_run.bold = True
-    name_run.font.size = Pt(22)
+    name_run.font.size = Pt(18)
     name_run.font.color.rgb = accent
 
     # ── CONTACT LINE (centered) ──
@@ -899,7 +899,7 @@ def generate_docx_from_builder(data):
         contact_pg.alignment = WD_ALIGN_PARAGRAPH.CENTER
         contact_pg.paragraph_format.space_after = Pt(2)
         contact_run = contact_pg.add_run("  |  ".join(contact_parts))
-        contact_run.font.size = Pt(9)
+        contact_run.font.size = Pt(8)
         contact_run.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
 
     add_horizontal_rule()
@@ -909,9 +909,9 @@ def generate_docx_from_builder(data):
     if summary:
         add_section_heading("Professional Summary")
         p = doc.add_paragraph(summary)
-        p.paragraph_format.space_after = Pt(6)
+        p.paragraph_format.space_after = Pt(4)
         for run in p.runs:
-            run.font.size = Pt(10)
+            run.font.size = Pt(8)
             run.font.color.rgb = RGBColor(0x44, 0x44, 0x44)
 
     # ── EXPERIENCE ──
@@ -925,13 +925,13 @@ def generate_docx_from_builder(data):
             pos_pg.paragraph_format.space_after = Pt(1)
             pos_run = pos_pg.add_run(exp.get("position", "") or "Position")
             pos_run.bold = True
-            pos_run.font.size = Pt(11)
+            pos_run.font.size = Pt(9)
             date_start = format_date(exp.get("start_date", ""))
             date_end = "Present" if exp.get("is_current") else format_date(exp.get("end_date", ""))
             date_str = f"{date_start} – {date_end}" if date_start else ""
             if date_str:
                 pos_run2 = pos_pg.add_run(f"    |    {date_str}")
-                pos_run2.font.size = Pt(9)
+                pos_run2.font.size = Pt(8)
                 pos_run2.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
 
             # Company name
@@ -940,39 +940,61 @@ def generate_docx_from_builder(data):
                 comp_pg = doc.add_paragraph()
                 comp_pg.paragraph_format.space_after = Pt(2)
                 comp_run = comp_pg.add_run(company)
-                comp_run.font.size = Pt(10)
+                comp_run.font.size = Pt(8)
                 comp_run.font.color.rgb = RGBColor(0x44, 0x44, 0x44)
                 comp_run.italic = True
 
-            # Description as bullet points
+            # Description as bullet points — max 4 bullets, max 160 chars each
             desc = exp.get("description", "")
             if desc:
+                bullet_count = 0
                 for line in desc.strip().split("\n"):
+                    if bullet_count >= 4:
+                        break
                     line = line.strip().lstrip("•-").strip()
                     if line:
+                        # Truncate to ~160 chars (approx 2 lines)
+                        if len(line) > 160:
+                            line = line[:157].rstrip() + "..."
                         bp = doc.add_paragraph(line, style="List Bullet")
                         bp.paragraph_format.space_after = Pt(1)
                         for r in bp.runs:
-                            r.font.size = Pt(10)
+                            r.font.size = Pt(8)
+                        bullet_count += 1
 
     # ── PROJECTS ──
     projects = data.get("project", []) or []
     if projects:
         add_section_heading("Projects")
-        for proj in projects:
+        for proj in projects[:3]:  # Max 3 projects
             p_name = doc.add_paragraph()
-            p_name.paragraph_format.space_before = Pt(4)
+            p_name.paragraph_format.space_before = Pt(3)
             p_name.paragraph_format.space_after = Pt(1)
             run = p_name.add_run(proj.get("name", "") or "Project Name")
             run.bold = True
-            run.font.size = Pt(11)
+            run.font.size = Pt(9)
+            # Show date next to project name
+            proj_date = proj.get("date", "")
+            if proj_date:
+                date_run = p_name.add_run(f"  |  {proj_date}")
+                date_run.font.size = Pt(8)
+                date_run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
+            # Show link if available
+            proj_link = proj.get("link", "")
+            if proj_link:
+                link_run = p_name.add_run(f"  •  {proj_link}")
+                link_run.font.size = Pt(7)
+                link_run.font.color.rgb = RGBColor(0x66, 0x88, 0xCC)
 
             p_desc = proj.get("description", "")
             if p_desc:
+                # Truncate project description to ~200 chars
+                if len(p_desc) > 200:
+                    p_desc = p_desc[:197].rstrip() + "..."
                 dp = doc.add_paragraph(p_desc)
                 dp.paragraph_format.space_after = Pt(2)
                 for r in dp.runs:
-                    r.font.size = Pt(10)
+                    r.font.size = Pt(8)
                     r.font.color.rgb = RGBColor(0x44, 0x44, 0x44)
 
     # ── EDUCATION ──
@@ -989,12 +1011,12 @@ def generate_docx_from_builder(data):
                 degree_text += f" in {field}"
             run = edu_pg.add_run(degree_text or "Degree")
             run.bold = True
-            run.font.size = Pt(11)
+            run.font.size = Pt(9)
 
             grad_date = format_date(edu.get("graduation_date", ""))
             if grad_date:
                 run2 = edu_pg.add_run(f"    |    {grad_date}")
-                run2.font.size = Pt(9)
+                run2.font.size = Pt(8)
                 run2.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
 
             inst = edu.get("institution", "")
@@ -1002,7 +1024,7 @@ def generate_docx_from_builder(data):
                 inst_pg = doc.add_paragraph()
                 inst_pg.paragraph_format.space_after = Pt(1)
                 inst_run = inst_pg.add_run(inst)
-                inst_run.font.size = Pt(10)
+                inst_run.font.size = Pt(8)
                 inst_run.font.color.rgb = RGBColor(0x44, 0x44, 0x44)
 
             gpa = edu.get("gpa", "")
@@ -1010,28 +1032,47 @@ def generate_docx_from_builder(data):
                 gpa_pg = doc.add_paragraph()
                 gpa_pg.paragraph_format.space_after = Pt(2)
                 gpa_run = gpa_pg.add_run(f"GPA: {gpa}")
-                gpa_run.font.size = Pt(9)
+                gpa_run.font.size = Pt(7)
                 gpa_run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
 
-    # ── CORE SKILLS ──
+    # ── CERTIFICATIONS ──
+    certifications = data.get("certifications", []) or []
+    if certifications:
+        add_section_heading("Certifications")
+        for cert in certifications[:4]:  # Max 4
+            cert_name = cert.get("name", "") or ""
+            cert_date = cert.get("date", "") or ""
+            cert_link = cert.get("link", "") or ""
+            line_parts = [cert_name]
+            if cert_date:
+                line_parts.append(cert_date)
+            if cert_link:
+                line_parts.append(cert_link)
+            cert_pg = doc.add_paragraph()
+            cert_pg.paragraph_format.space_before = Pt(2)
+            cert_pg.paragraph_format.space_after = Pt(1)
+            cert_run = cert_pg.add_run(cert_name)
+            cert_run.bold = True
+            cert_run.font.size = Pt(9)
+            if cert_date or cert_link:
+                extra = []
+                if cert_date: extra.append(cert_date)
+                if cert_link: extra.append(cert_link)
+                meta_run = cert_pg.add_run("  |  " + "  |  ".join(extra))
+                meta_run.font.size = Pt(8)
+                meta_run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
+
+    # ── CORE SKILLS (merged with keywords) ──
     skills = data.get("skills", []) or []
-    if skills:
+    keywords = data.get("keywords", []) or []
+    all_skills = list(skills) + [k for k in keywords if k not in skills]
+    if all_skills:
         add_section_heading("Core Skills")
         p = doc.add_paragraph()
         p.paragraph_format.space_after = Pt(6)
-        run = p.add_run("  •  ".join(skills))
+        run = p.add_run("  •  ".join(all_skills))
         run.font.size = Pt(10)
         run.font.color.rgb = RGBColor(0x44, 0x44, 0x44)
-
-    # ── INDUSTRY KEYWORDS ──
-    keywords = data.get("keywords", []) or []
-    if keywords:
-        add_section_heading("Industry Keywords")
-        p = doc.add_paragraph()
-        p.paragraph_format.space_after = Pt(6)
-        run = p.add_run("  •  ".join(keywords))
-        run.font.size = Pt(10)
-        run.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
 
     bio = io.BytesIO()
     doc.save(bio)

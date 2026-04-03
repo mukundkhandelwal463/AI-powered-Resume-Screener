@@ -99,6 +99,7 @@ def send_email(subject, recipient, body_html):
         return False
 
     try:
+        print(f"[SMTP] Sending email to {recipient} via {smtp_server}:{smtp_port} as {smtp_user}")
         msg = MIMEMultipart()
         msg["From"] = mail_sender
         msg["To"] = recipient
@@ -110,9 +111,10 @@ def send_email(subject, recipient, body_html):
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
+        print(f"[SMTP] ✅ Email sent successfully to {recipient}")
         return True
     except Exception as e:
-        print(f"[SMTP] Error sending to {recipient}: {e}")
+        print(f"[SMTP] ❌ Error sending to {recipient}: {e}")
         return False
 
 
@@ -734,8 +736,15 @@ def register():
     if len(password) < 6:
         return jsonify({"success": False, "error": "Password must be at least 6 characters."}), 400
 
-    if User.query.filter_by(email=email).first():
-        return jsonify({"success": False, "error": "Email already registered."}), 409
+    existing = User.query.filter_by(email=email).first()
+    if existing:
+        if existing.is_verified:
+            return jsonify({"success": False, "error": "Email already registered."}), 409
+        else:
+            # Delete unverified user so they can re-register
+            OTP.query.filter_by(email=email).delete()
+            db.session.delete(existing)
+            db.session.commit()
 
     user = User(full_name=full_name, email=email, mobile=mobile, is_verified=False)
     user.set_password(password)
@@ -955,6 +964,56 @@ def update_profile():
         user.mobile = data["mobile"].strip()
     db.session.commit()
     return jsonify({"success": True, "user": user.to_dict()})
+
+
+@app.route("/api/dashboard", methods=["GET"])
+def get_dashboard():
+    """Get dashboard stats for the logged-in user."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "error": "Not logged in."}), 401
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"success": False, "error": "User not found."}), 401
+
+    resumes = Resume.query.filter_by(user_id=user_id).order_by(Resume.updated_at.desc()).all()
+    
+    total_resumes = len(resumes)
+    scores = [r.ats_score for r in resumes if r.ats_score is not None]
+    avg_score = round(sum(scores) / len(scores), 1) if scores else 0
+    best_score = round(max(scores), 1) if scores else 0
+    categories = list(set(r.category for r in resumes if r.category))
+    
+    recent = []
+    for r in resumes[:5]:
+        recent.append({
+            "id": r.id,
+            "title": r.title,
+            "ats_score": r.ats_score,
+            "category": r.category,
+            "date": r.updated_at.strftime("%b %d, %Y") if r.updated_at else "",
+        })
+
+    return jsonify({
+        "success": True,
+        "user": user.to_dict(),
+        "stats": {
+            "total_resumes": total_resumes,
+            "avg_score": avg_score,
+            "best_score": best_score,
+            "categories": categories,
+            "total_analyses": len(scores),
+        },
+        "recent_activity": recent,
+    })
+
+
+@app.route("/profile.html")
+def profile_page():
+    """Serve the profile/dashboard page."""
+    if not is_authenticated():
+        return redirect("/login.html")
+    return render_template("profile.html", google_client_id=os.environ.get("GOOGLE_CLIENT_ID", ""))
 
 
 # =============================================
