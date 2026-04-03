@@ -816,15 +816,15 @@ def generate_docx_from_builder(data):
 
     # Set narrow margins
     for section in doc.sections:
-        section.top_margin = Inches(0.6)
-        section.bottom_margin = Inches(0.5)
-        section.left_margin = Inches(0.75)
-        section.right_margin = Inches(0.75)
+        section.top_margin = Inches(0.4)
+        section.bottom_margin = Inches(0.4)
+        section.left_margin = Inches(0.6)
+        section.right_margin = Inches(0.6)
 
     style = doc.styles['Normal']
     style.font.name = 'Calibri'
     style.font.size = Pt(11)
-    style.paragraph_format.space_after = Pt(2)
+    style.paragraph_format.space_after = Pt(1)
     style.paragraph_format.space_before = Pt(0)
 
     pi = data.get("personal_info", {}) or {}
@@ -839,8 +839,8 @@ def generate_docx_from_builder(data):
 
     def add_horizontal_rule():
         p = doc.add_paragraph()
-        p.paragraph_format.space_before = Pt(4)
-        p.paragraph_format.space_after = Pt(4)
+        p.paragraph_format.space_before = Pt(1)
+        p.paragraph_format.space_after = Pt(1)
         pPr = p._p.get_or_add_pPr()
         pBdr = OxmlElement('w:pBdr')
         bottom = OxmlElement('w:bottom')
@@ -853,8 +853,8 @@ def generate_docx_from_builder(data):
 
     def add_section_heading(title):
         p = doc.add_paragraph()
-        p.paragraph_format.space_before = Pt(10)
-        p.paragraph_format.space_after = Pt(4)
+        p.paragraph_format.space_before = Pt(4)
+        p.paragraph_format.space_after = Pt(1)
         run = p.add_run(title.upper())
         run.bold = True
         run.font.size = Pt(11)
@@ -875,7 +875,7 @@ def generate_docx_from_builder(data):
     # ── NAME (centered, large, accent color) ──
     name_pg = doc.add_paragraph()
     name_pg.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    name_pg.paragraph_format.space_after = Pt(2)
+    name_pg.paragraph_format.space_after = Pt(1)
     name_run = name_pg.add_run(pi.get("full_name", "") or "Your Name")
     name_run.bold = True
     name_run.font.size = Pt(18)
@@ -897,7 +897,7 @@ def generate_docx_from_builder(data):
     if contact_parts:
         contact_pg = doc.add_paragraph()
         contact_pg.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        contact_pg.paragraph_format.space_after = Pt(2)
+        contact_pg.paragraph_format.space_after = Pt(1)
         contact_run = contact_pg.add_run("  |  ".join(contact_parts))
         contact_run.font.size = Pt(8)
         contact_run.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
@@ -909,7 +909,7 @@ def generate_docx_from_builder(data):
     if summary:
         add_section_heading("Professional Summary")
         p = doc.add_paragraph(summary)
-        p.paragraph_format.space_after = Pt(4)
+        p.paragraph_format.space_after = Pt(2)
         for run in p.runs:
             run.font.size = Pt(8)
             run.font.color.rgb = RGBColor(0x44, 0x44, 0x44)
@@ -921,8 +921,8 @@ def generate_docx_from_builder(data):
         for exp in experience:
             # Row: Position | Dates
             pos_pg = doc.add_paragraph()
-            pos_pg.paragraph_format.space_before = Pt(6)
-            pos_pg.paragraph_format.space_after = Pt(1)
+            pos_pg.paragraph_format.space_before = Pt(2)
+            pos_pg.paragraph_format.space_after = Pt(0)
             pos_run = pos_pg.add_run(exp.get("position", "") or "Position")
             pos_run.bold = True
             pos_run.font.size = Pt(9)
@@ -938,7 +938,7 @@ def generate_docx_from_builder(data):
             company = exp.get("company", "")
             if company:
                 comp_pg = doc.add_paragraph()
-                comp_pg.paragraph_format.space_after = Pt(2)
+                comp_pg.paragraph_format.space_after = Pt(1)
                 comp_run = comp_pg.add_run(company)
                 comp_run.font.size = Pt(8)
                 comp_run.font.color.rgb = RGBColor(0x44, 0x44, 0x44)
@@ -957,7 +957,7 @@ def generate_docx_from_builder(data):
                         if len(line) > 160:
                             line = line[:157].rstrip() + "..."
                         bp = doc.add_paragraph(line, style="List Bullet")
-                        bp.paragraph_format.space_after = Pt(1)
+                        bp.paragraph_format.space_after = Pt(0)
                         for r in bp.runs:
                             r.font.size = Pt(8)
                         bullet_count += 1
@@ -968,8 +968,8 @@ def generate_docx_from_builder(data):
         add_section_heading("Projects")
         for proj in projects[:3]:  # Max 3 projects
             p_name = doc.add_paragraph()
-            p_name.paragraph_format.space_before = Pt(3)
-            p_name.paragraph_format.space_after = Pt(1)
+            p_name.paragraph_format.space_before = Pt(1)
+            p_name.paragraph_format.space_after = Pt(0)
             run = p_name.add_run(proj.get("name", "") or "Project Name")
             run.bold = True
             run.font.size = Pt(9)
@@ -992,7 +992,7 @@ def generate_docx_from_builder(data):
                 if len(p_desc) > 200:
                     p_desc = p_desc[:197].rstrip() + "..."
                 dp = doc.add_paragraph(p_desc)
-                dp.paragraph_format.space_after = Pt(2)
+                dp.paragraph_format.space_after = Pt(1)
                 for r in dp.runs:
                     r.font.size = Pt(8)
                     r.font.color.rgb = RGBColor(0x44, 0x44, 0x44)
@@ -1003,8 +1003,8 @@ def generate_docx_from_builder(data):
         add_section_heading("Education")
         for edu in education:
             edu_pg = doc.add_paragraph()
-            edu_pg.paragraph_format.space_before = Pt(4)
-            edu_pg.paragraph_format.space_after = Pt(1)
+            edu_pg.paragraph_format.space_before = Pt(2)
+            edu_pg.paragraph_format.space_after = Pt(0)
             degree_text = edu.get("degree", "") or ""
             field = edu.get("field", "")
             if field:
@@ -1022,7 +1022,7 @@ def generate_docx_from_builder(data):
             inst = edu.get("institution", "")
             if inst:
                 inst_pg = doc.add_paragraph()
-                inst_pg.paragraph_format.space_after = Pt(1)
+                inst_pg.paragraph_format.space_after = Pt(0)
                 inst_run = inst_pg.add_run(inst)
                 inst_run.font.size = Pt(8)
                 inst_run.font.color.rgb = RGBColor(0x44, 0x44, 0x44)
@@ -1030,7 +1030,7 @@ def generate_docx_from_builder(data):
             gpa = edu.get("gpa", "")
             if gpa:
                 gpa_pg = doc.add_paragraph()
-                gpa_pg.paragraph_format.space_after = Pt(2)
+                gpa_pg.paragraph_format.space_after = Pt(1)
                 gpa_run = gpa_pg.add_run(f"GPA: {gpa}")
                 gpa_run.font.size = Pt(7)
                 gpa_run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
@@ -1049,8 +1049,8 @@ def generate_docx_from_builder(data):
             if cert_link:
                 line_parts.append(cert_link)
             cert_pg = doc.add_paragraph()
-            cert_pg.paragraph_format.space_before = Pt(2)
-            cert_pg.paragraph_format.space_after = Pt(1)
+            cert_pg.paragraph_format.space_before = Pt(1)
+            cert_pg.paragraph_format.space_after = Pt(0)
             cert_run = cert_pg.add_run(cert_name)
             cert_run.bold = True
             cert_run.font.size = Pt(9)
