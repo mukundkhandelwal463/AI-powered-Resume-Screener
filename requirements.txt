@@ -1,0 +1,15 @@
+flask
+flask-cors
+flask-sqlalchemy
+pymysql
+google-auth
+numpy
+pandas
+scikit-learn
+pdfplumber
+python-docx
+PyPDF2
+google-generativeai
+python-dotenv
+fpdf2
+gunicorn
