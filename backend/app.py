@@ -50,11 +50,11 @@ app = Flask(
 app.secret_key = os.environ.get("SECRET_KEY", "airesume-secret-key-2026")
 
 # --- Database Init ---
-DB_USER = "root"
-DB_PASS = "1234"
-DB_HOST = "127.0.0.1"
-DB_PORT = 3306
-DB_NAME = "resume_scanner"
+DB_USER = os.environ.get("DB_USER", "root")
+DB_PASS = os.environ.get("DB_PASS", "1234")
+DB_HOST = os.environ.get("DB_HOST", "127.0.0.1")
+DB_PORT = int(os.environ.get("DB_PORT", 3306))
+DB_NAME = os.environ.get("DB_NAME", "resume_scanner")
 
 # Auto-create the database if it doesn't exist
 try:
