@@ -50,22 +50,23 @@ app = Flask(
 app.secret_key = os.environ.get("SECRET_KEY", "airesume-secret-key-2026")
 
 # --- Database Config ---
-# Support for a single connection string (Railway standard) OR individual variables
-DATABASE_URL = os.environ.get("MYSQL_URL") or os.environ.get("DATABASE_URL") or os.environ.get("MYSQL_PUBLIC_URL")
+# FORCE USE PUBLIC URL (Railway standard)
+DATABASE_URL = os.environ.get("MYSQL_PUBLIC_URL")
 
-if DATABASE_URL:
-    # Convert mysql:// to mysql+pymysql:// if needed
-    if DATABASE_URL.startswith("mysql://") and "pymysql" not in DATABASE_URL:
-        DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
-else:
-    # Fallback to individual variables
+if not DATABASE_URL:
+    # Fallback to local for local development ONLY
     DB_USER = os.environ.get("DB_USER", "root")
     DB_PASS = os.environ.get("DB_PASS", "1234")
     DB_HOST = os.environ.get("DB_HOST", "127.0.0.1")
     DB_PORT = os.environ.get("DB_PORT", "3306")
     DB_NAME = os.environ.get("DB_NAME", "resume_scanner")
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+# Ensure we use the correct driver
+if DATABASE_URL.startswith("mysql://") and "pymysql" not in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 CORS(app)
