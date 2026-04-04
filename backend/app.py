@@ -1097,19 +1097,14 @@ def delete_resume(resume_id):
     return jsonify({"success": True})
 
 
-# --- Serve Frontend for all other routes (SPA Support) ---
+# --- Serve Frontend (SPA Support) ---
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
 def serve_frontend(path):
-    # Only serve index.html if it's NOT an API route
+    # Skip API routes
     if path.startswith("api/"):
-        return jsonify({"error": "API route not found"}), 404
-        
-    # Check if the file exists in dist (for images, CSS, etc.)
-    if path and os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-        
-    # Otherwise, return index.html for React routing
+        return jsonify({"error": "Not Found"}), 404
+    # Serve index.html for all other frontend routes
     return send_from_directory(app.static_folder, "index.html")
 
 if __name__ == "__main__":
