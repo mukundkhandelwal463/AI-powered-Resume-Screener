@@ -51,7 +51,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "airesume-secret-key-2026")
 
 # --- Database Config ---
 # Support for a single connection string (Railway standard) OR individual variables
-DATABASE_URL = os.environ.get("MYSQL_URL") or os.environ.get("DATABASE_URL")
+DATABASE_URL = os.environ.get("MYSQL_URL") or os.environ.get("DATABASE_URL") or os.environ.get("MYSQL_PUBLIC_URL")
 
 if DATABASE_URL:
     # Convert mysql:// to mysql+pymysql:// if needed
