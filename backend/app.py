@@ -154,10 +154,22 @@ def resume_maker_root():
         return redirect("/login")
     return render_template("maker_options.html")
 
+@app.get("/resume-maker/form-builder")
+def resume_maker_form_builder_entry():
+    if not is_authenticated():
+        return redirect("/login")
+    if _client_build_ready():
+        return redirect(RESUME_MAKER_ENTRY_PATH)
+    return redirect("/form")
+
 
 @app.get("/resume-maker/<path:asset_path>")
 def resume_maker_static(asset_path: str):
     if not _client_build_ready():
+        if asset_path.startswith("app/"):
+            if not is_authenticated():
+                return redirect("/login")
+            return redirect("/form")
         abort(404)
     requested_path = os.path.join(CLIENT_DIST_DIR, asset_path)
     if os.path.isfile(requested_path):
@@ -1089,15 +1101,53 @@ def delete_resume(resume_id):
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"success": False, "error": "Not logged in."}), 401
+        
     resume = Resume.query.filter_by(id=resume_id, user_id=user_id).first()
     if not resume:
         return jsonify({"success": False, "error": "Resume not found."}), 404
+        
     db.session.delete(resume)
     db.session.commit()
     return jsonify({"success": True})
 
 
+# --- New Standalone Builder API ---
+@app.route("/api/build-resume", methods=["POST"])
+def api_build_resume_standalone():
+    try:
+        data = request.json
+        from ai_integration import generate_docx_from_builder
+        
+        # Generate the professional DOCX file
+        filename = f"Resume_{int(datetime.now().timestamp())}.docx"
+        filepath = os.path.join(DOWNLOAD_FOLDER, filename)
+        
+        # This will use the reduced spacing and margin logic we added to ai_integration.py
+        generate_docx_from_builder(data, filepath)
+        
+        return jsonify({
+            "success": True, 
+            "message": "Resume built successfully!",
+            "filename": filename,
+            "download_url": f"/api/download/{filename}"
+        })
+    except Exception as e:
+        print(f"Error building resume: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # --- Serve Frontend (SPA Support) ---
+@app.route("/resume-maker/app/builder/default")
+def serve_builder():
+    if not is_authenticated():
+        return redirect("/login")
+
+    # Serve React builder when client build exists; otherwise fall back
+    # to legacy template so route never hard-404s in deployments without client/dist.
+    if _client_build_ready():
+        return send_from_directory(CLIENT_DIST_DIR, "index.html")
+    return render_template("form.html", google_client_id=os.environ.get("GOOGLE_CLIENT_ID", ""))
+
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
 def serve_frontend(path):
