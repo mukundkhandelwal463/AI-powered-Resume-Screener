@@ -50,21 +50,35 @@ app = Flask(
 app.secret_key = os.environ.get("SECRET_KEY", "airesume-secret-key-2026")
 
 # --- Database Config ---
-# FORCE USE PUBLIC URL (Railway standard)
-DATABASE_URL = os.environ.get("MYSQL_PUBLIC_URL")
+def _build_database_url() -> str:
+    """Prefer Railway internal MySQL variables, then URL-based fallbacks, then local dev vars."""
+    railway_host = os.environ.get("MYSQLHOST")
+    railway_user = os.environ.get("MYSQLUSER")
+    railway_password = os.environ.get("MYSQLPASSWORD")
+    railway_database = os.environ.get("MYSQLDATABASE") or os.environ.get("MYSQL_DATABASE")
+    railway_port = os.environ.get("MYSQLPORT")
 
-if not DATABASE_URL:
-    # Fallback to local for local development ONLY
-    DB_USER = os.environ.get("DB_USER", "root")
-    DB_PASS = os.environ.get("DB_PASS", "1234")
-    DB_HOST = os.environ.get("DB_HOST", "127.0.0.1")
-    DB_PORT = os.environ.get("DB_PORT", "3306")
-    DB_NAME = os.environ.get("DB_NAME", "resume_scanner")
-    DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    if all([railway_host, railway_user, railway_password, railway_database, railway_port]):
+        return (
+            f"mysql+pymysql://{railway_user}:{railway_password}"
+            f"@{railway_host}:{railway_port}/{railway_database}"
+        )
 
-# Ensure we use the correct driver
-if DATABASE_URL.startswith("mysql://") and "pymysql" not in DATABASE_URL:
-    DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
+    database_url = os.environ.get("MYSQL_URL") or os.environ.get("MYSQL_PUBLIC_URL")
+    if database_url:
+        if database_url.startswith("mysql://") and "pymysql" not in database_url:
+            return database_url.replace("mysql://", "mysql+pymysql://", 1)
+        return database_url
+
+    db_user = os.environ.get("DB_USER", "root")
+    db_pass = os.environ.get("DB_PASS", "1234")
+    db_host = os.environ.get("DB_HOST", "127.0.0.1")
+    db_port = os.environ.get("DB_PORT", "3306")
+    db_name = os.environ.get("DB_NAME", "resume_scanner")
+    return f"mysql+pymysql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+
+
+DATABASE_URL = _build_database_url()
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
