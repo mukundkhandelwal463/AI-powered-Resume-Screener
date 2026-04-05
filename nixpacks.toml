@@ -1,2 +1,16 @@
+[phases.setup]
+nixPkgs = ["python311", "nodejs_20"]
+
+[phases.install]
+cmds = [
+  "pip install -r backend/requirements.txt",
+  "npm --prefix client ci"
+]
+
+[phases.build]
+cmds = [
+  "npm --prefix client run build"
+]
+
 [start]
 cmd = "gunicorn --chdir backend app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
