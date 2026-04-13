@@ -552,6 +552,48 @@ def health():
     })
 
 
+@app.get("/api/test-smtp")
+def test_smtp():
+    """Temporary diagnostic: test SMTP connection synchronously and return exact error."""
+    import traceback
+    smtp_server = os.environ.get("SMTP_SERVER", "").strip()
+    try:
+        smtp_port = int(os.environ.get("SMTP_PORT") or 587)
+    except Exception:
+        smtp_port = 587
+    smtp_user = os.environ.get("SMTP_USER", "").strip()
+    smtp_pass = os.environ.get("SMTP_PASS", "").strip()
+
+    if not all([smtp_server, smtp_user, smtp_pass]):
+        return jsonify({"error": "Missing SMTP config", "server": smtp_server, "user": smtp_user, "pass_set": bool(smtp_pass)})
+
+    results = []
+
+    # Try STARTTLS (port 587)
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
+        server.login(smtp_user, smtp_pass)
+        server.quit()
+        results.append({"method": "STARTTLS", "port": smtp_port, "status": "SUCCESS"})
+    except Exception as e:
+        results.append({"method": "STARTTLS", "port": smtp_port, "status": "FAILED", "error": str(e), "trace": traceback.format_exc()})
+
+    # Try SSL (port 465)
+    try:
+        server = smtplib.SMTP_SSL(smtp_server, 465, timeout=10)
+        server.ehlo()
+        server.login(smtp_user, smtp_pass)
+        server.quit()
+        results.append({"method": "SSL", "port": 465, "status": "SUCCESS"})
+    except Exception as e:
+        results.append({"method": "SSL", "port": 465, "status": "FAILED", "error": str(e), "trace": traceback.format_exc()})
+
+    return jsonify({"smtp_server": smtp_server, "smtp_port": smtp_port, "smtp_user": smtp_user, "results": results})
+
+
 @app.post("/api/generate-summary")
 def generate_summary():
     try:
