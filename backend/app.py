@@ -3,6 +3,7 @@ import base64
 import re
 import traceback
 import logging
+import threading
 from typing import Dict, List
 from pathlib import Path
 from dotenv import load_dotenv
@@ -143,8 +144,8 @@ except Exception as e:
 service = ResumeModelService(dataset_path=DATASET_PATH)
 
 
-def send_email(subject, recipient, body_html):
-    """Utility to send an email via SMTP."""
+def _send_email_sync(subject, recipient, body_html):
+    """Internal synchronous email sender with timeout and SSL fallback."""
     smtp_server = os.environ.get("SMTP_SERVER", "").strip()
     
     try:
@@ -158,26 +159,58 @@ def send_email(subject, recipient, body_html):
 
     if not all([smtp_server, smtp_user, smtp_pass]):
         print("[SMTP] Error: Missing configuration in .env")
+        print(f"[SMTP] server='{smtp_server}' user='{smtp_user}' pass_set={'yes' if smtp_pass else 'no'}")
         return False
 
-    try:
-        print(f"[SMTP] Sending email to {recipient} via {smtp_server}:{smtp_port} as {smtp_user}")
-        msg = MIMEMultipart()
-        msg["From"] = mail_sender
-        msg["To"] = recipient
-        msg["Subject"] = subject
-        msg.attach(MIMEText(body_html, "html"))
+    msg = MIMEMultipart()
+    msg["From"] = mail_sender
+    msg["To"] = recipient
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body_html, "html"))
 
-        server = smtplib.SMTP(smtp_server, smtp_port)
+    # Try 1: SMTP with STARTTLS (port 587)
+    try:
+        print(f"[SMTP] Attempt 1: STARTTLS to {smtp_server}:{smtp_port} as {smtp_user}")
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
+        server.ehlo()
         server.starttls()
+        server.ehlo()
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
-        print(f"[SMTP] Email sent successfully to {recipient}")
+        print(f"[SMTP] Email sent successfully to {recipient} via STARTTLS")
         return True
-    except Exception as e:
-        print(f"[SMTP] Error sending to {recipient}: {e}")
-        return False
+    except Exception as e1:
+        print(f"[SMTP] STARTTLS failed: {e1}")
+
+    # Try 2: SMTP_SSL (port 465)
+    try:
+        ssl_port = 465
+        print(f"[SMTP] Attempt 2: SSL to {smtp_server}:{ssl_port} as {smtp_user}")
+        server = smtplib.SMTP_SSL(smtp_server, ssl_port, timeout=10)
+        server.ehlo()
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+        server.quit()
+        print(f"[SMTP] Email sent successfully to {recipient} via SSL")
+        return True
+    except Exception as e2:
+        print(f"[SMTP] SSL also failed: {e2}")
+
+    print(f"[SMTP] All attempts failed for {recipient}")
+    return False
+
+
+def send_email(subject, recipient, body_html):
+    """Send email in a background thread so the API response is not blocked."""
+    thread = threading.Thread(
+        target=_send_email_sync,
+        args=(subject, recipient, body_html),
+        daemon=True,
+    )
+    thread.start()
+    print(f"[SMTP] Email queued for {recipient} (background thread)")
+    return True
 
 
 def generate_otp(length=6):
@@ -510,6 +543,11 @@ def health():
         "status": "ok",
         "database_status": db_status,
         "database_url_masked": masked_url,
+        "smtp_server": os.environ.get("SMTP_SERVER", "NOT SET"),
+        "smtp_port": os.environ.get("SMTP_PORT", "NOT SET"),
+        "smtp_user": os.environ.get("SMTP_USER", "NOT SET"),
+        "smtp_pass_set": "yes" if os.environ.get("SMTP_PASS") else "NO",
+        "mail_sender": os.environ.get("MAIL_SENDER", "NOT SET"),
         "trace": trace
     })
 
