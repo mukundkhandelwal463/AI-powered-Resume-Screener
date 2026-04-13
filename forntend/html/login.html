@@ -339,6 +339,23 @@ function showStatus(msg, type) {
     el.className = 'auth-status ' + type;
 }
 
+async function readApiResponse(res) {
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+        return await res.json();
+    }
+
+    const text = await res.text();
+    if (!res.ok) {
+        return {
+            success: false,
+            error: 'Server returned ' + res.status + '. Check backend/server_errors.log after restarting the backend.'
+        };
+    }
+
+    return { success: false, error: text || 'Unexpected server response.' };
+}
+
 async function handleLogin(e) {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value;
@@ -349,7 +366,7 @@ async function handleLogin(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
-        const data = await res.json();
+        const data = await readApiResponse(res);
         if (data.success) {
             showLoggedIn(data.user);
         } else if (data.unverified) {
@@ -375,7 +392,7 @@ async function handleRegister(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ full_name, email, mobile, password })
         });
-        const data = await res.json();
+        const data = await readApiResponse(res);
         if (data.success) {
             showOTP(email);
             showStatus("Verification code sent to " + email, 'success');
@@ -413,7 +430,7 @@ async function handleVerifyOTP(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, code })
         });
-        const data = await res.json();
+        const data = await readApiResponse(res);
         if (data.success) {
             showLoggedIn(data.user);
         } else {
@@ -435,7 +452,7 @@ async function handleResendOTP() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
         });
-        const data = await res.json();
+        const data = await readApiResponse(res);
         if (data.success) {
             showStatus("New OTP sent to " + email, 'success');
             
@@ -498,7 +515,7 @@ function handleGoogleCredentialResponse(response) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_token: response.credential })
     })
-    .then(r => r.json())
+    .then(readApiResponse)
     .then(data => {
         if (data.success) {
             showLoggedIn(data.user);
@@ -513,7 +530,7 @@ function handleGoogleCredentialResponse(response) {
 async function checkSession() {
     try {
         const res = await fetch(API + '/api/auth/me');
-        const data = await res.json();
+        const data = await readApiResponse(res);
         if (data.success) {
             showLoggedIn(data.user);
         }

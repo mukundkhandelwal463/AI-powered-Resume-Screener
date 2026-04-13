@@ -8,3 +8,5 @@ __pycache__/
 
 backend/.env
 *.log
+backend/*.db
+backend/server_*.log

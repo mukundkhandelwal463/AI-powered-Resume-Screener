@@ -1,10 +1,12 @@
 import os
 import base64
 import re
+import traceback
+import logging
 from typing import Dict, List
+from pathlib import Path
 from dotenv import load_dotenv
-load_dotenv()
-
+from datetime import datetime
 import json
 
 from flask import Flask, jsonify, request, render_template, abort, send_from_directory, redirect, session
@@ -36,11 +38,16 @@ from ai_integration import (
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 DATASET_PATH = os.path.join(BASE_DIR, "UpdatedResumeDataSet.csv")
 FRONTEND_DIR = os.path.join(BASE_DIR, "..", "forntend")
 TEMPLATES_DIR = os.path.join(FRONTEND_DIR, "html")
 CLIENT_DIST_DIR = os.path.join(BASE_DIR, "..", "client", "dist")
+DOWNLOAD_FOLDER = os.path.join(BASE_DIR, "downloads")
+os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 RESUME_MAKER_ENTRY_PATH = "/resume-maker/app/builder/default"
+SQLITE_FALLBACK_PATH = Path(BASE_DIR, "resume_screener.db")
+ERROR_LOG_PATH = os.path.join(BASE_DIR, "server_errors.log")
 
 app = Flask(
     __name__,
@@ -48,42 +55,58 @@ app = Flask(
     static_folder=FRONTEND_DIR,
 )
 app.secret_key = os.environ.get("SECRET_KEY", "airesume-secret-key-2026")
+logging.basicConfig(
+    filename=ERROR_LOG_PATH,
+    level=logging.ERROR,
+    format="%(asctime)s %(levelname)s %(message)s",
+)
 
 # --- Database Config ---
 def _build_database_url() -> str:
-    """Prefer Railway internal MySQL variables, then URL-based fallbacks, then local dev vars."""
+    """Use MySQL when available, otherwise fall back to local SQLite for development."""
+    database_url = os.environ.get("DATABASE_URL")
+    if database_url:
+        return database_url
+
     railway_host = os.environ.get("MYSQLHOST")
     railway_user = os.environ.get("MYSQLUSER")
     railway_password = os.environ.get("MYSQLPASSWORD")
-    railway_database = os.environ.get("MYSQLDATABASE") or os.environ.get("MYSQL_DATABASE")
+    railway_database = os.environ.get("MYSQLDATABASE")
     railway_port = os.environ.get("MYSQLPORT")
 
-    if all([railway_host, railway_user, railway_password, railway_database, railway_port]):
-        return (
-            f"mysql+pymysql://{railway_user}:{railway_password}"
-            f"@{railway_host}:{railway_port}/{railway_database}"
-        )
+    if not all([railway_host, railway_user, railway_password, railway_database, railway_port]):
+        print("[DB] MySQL variables missing. Falling back to local SQLite.")
+        return f"sqlite:///{SQLITE_FALLBACK_PATH.as_posix()}"
 
-    database_url = os.environ.get("MYSQL_URL") or os.environ.get("MYSQL_PUBLIC_URL")
-    if database_url:
-        if database_url.startswith("mysql://") and "pymysql" not in database_url:
-            return database_url.replace("mysql://", "mysql+pymysql://", 1)
-        return database_url
+    import sqlalchemy
+    try:
+        base_url = f"mysql+pymysql://{railway_user}:{railway_password}@{railway_host}:{railway_port}/"
+        engine = sqlalchemy.create_engine(base_url, pool_pre_ping=True)
+        with engine.connect() as conn:
+            conn.execute(sqlalchemy.text(f"CREATE DATABASE IF NOT EXISTS {railway_database}"))
+            conn.commit()
+        print(f"[DB] Connected to MySQL at {railway_host}:{railway_port}/{railway_database}")
+    except Exception as e:
+        print(f"[DB] MySQL unavailable, falling back to SQLite: {e}")
+        return f"sqlite:///{SQLITE_FALLBACK_PATH.as_posix()}"
 
-    db_user = os.environ.get("DB_USER", "root")
-    db_pass = os.environ.get("DB_PASS", "1234")
-    db_host = os.environ.get("DB_HOST", "127.0.0.1")
-    db_port = os.environ.get("DB_PORT", "3306")
-    db_name = os.environ.get("DB_NAME", "resume_scanner")
-    return f"mysql+pymysql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
-
+    return (
+        f"mysql+pymysql://{railway_user}:{railway_password}"
+        f"@{railway_host}:{railway_port}/{railway_database}"
+    )
 
 DATABASE_URL = _build_database_url()
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-CORS(app)
+CORS(app, supports_credentials=True)
+
+is_local_dev = os.environ.get("FLASK_ENV") != "production" and (
+    os.environ.get("MYSQLHOST") in {None, "", "127.0.0.1", "localhost"}
+)
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax" if is_local_dev else "None"
+app.config["SESSION_COOKIE_SECURE"] = False if is_local_dev else True
 
 try:
     from database import db, User, Resume, OTP
@@ -123,16 +146,33 @@ def send_email(subject, recipient, body_html):
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
-        print(f"[SMTP] ✅ Email sent successfully to {recipient}")
+        print(f"[SMTP] Email sent successfully to {recipient}")
         return True
     except Exception as e:
-        print(f"[SMTP] ❌ Error sending to {recipient}: {e}")
+        print(f"[SMTP] Error sending to {recipient}: {e}")
         return False
 
 
 def generate_otp(length=6):
     """Generate a random numeric OTP."""
     return "".join(random.choices(string.digits, k=length))
+
+
+def _log_api_exception(route_name: str, exc: Exception):
+    """Log API exceptions to a file and console-friendly output."""
+    trace = traceback.format_exc()
+    logging.error("[%s] %s\n%s", route_name, exc, trace)
+    print(f"[API ERROR] {route_name}: {exc}")
+
+
+@app.errorhandler(Exception)
+def handle_api_exception(exc):
+    """Return JSON for API failures instead of HTML error pages."""
+    route = request.path or ""
+    if route.startswith("/api/"):
+        _log_api_exception(route, exc)
+        return jsonify({"success": False, "error": str(exc) or "Internal server error"}), 500
+    raise exc
 
 ALLOWED_PAGES = {
     "home",
@@ -749,52 +789,55 @@ def download_docx_api():
 @app.route("/api/auth/register", methods=["POST"])
 def register():
     """Register a new user."""
-    data = request.get_json(force=True)
-    full_name = (data.get("full_name") or "").strip()
-    email = (data.get("email") or "").strip().lower()
-    mobile = (data.get("mobile") or "").strip()
-    password = data.get("password") or ""
+    try:
+        data = request.get_json(force=True)
+        full_name = (data.get("full_name") or "").strip()
+        email = (data.get("email") or "").strip().lower()
+        mobile = (data.get("mobile") or "").strip()
+        password = data.get("password") or ""
 
-    if not full_name or not email or not password:
-        return jsonify({"success": False, "error": "Name, email, and password are required."}), 400
-    if len(password) < 6:
-        return jsonify({"success": False, "error": "Password must be at least 6 characters."}), 400
+        if not full_name or not email or not password:
+            return jsonify({"success": False, "error": "Name, email, and password are required."}), 400
+        if len(password) < 6:
+            return jsonify({"success": False, "error": "Password must be at least 6 characters."}), 400
 
-    existing = User.query.filter_by(email=email).first()
-    if existing:
-        if existing.is_verified:
-            return jsonify({"success": False, "error": "Email already registered."}), 409
-        else:
+        existing = User.query.filter_by(email=email).first()
+        if existing:
+            if existing.is_verified:
+                return jsonify({"success": False, "error": "Email already registered."}), 409
             # Delete unverified user so they can re-register
             OTP.query.filter_by(email=email).delete()
             db.session.delete(existing)
             db.session.commit()
 
-    user = User(full_name=full_name, email=email, mobile=mobile, is_verified=False)
-    user.set_password(password)
-    db.session.add(user)
-    
-    # Generate and send OTP
-    otp_code = generate_otp()
-    otp_entry = OTP(email=email, code=otp_code, purpose="registration")
-    db.session.add(otp_entry)
-    db.session.commit()
+        user = User(full_name=full_name, email=email, mobile=mobile, is_verified=False)
+        user.set_password(password)
+        db.session.add(user)
 
-    email_body = f"""
-    <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-        <h2 style="color: #ff6b6b;">Confirm Your AI Resume Account</h2>
-        <p>Hello {full_name},</p>
-        <p>Use the code below to verify your email address and start building your premium resume:</p>
-        <div style="background: #f8f9fa; padding: 15px; font-size: 24px; font-weight: bold; text-align: center; color: #333; letter-spacing: 5px;">
-            {otp_code}
+        otp_code = generate_otp()
+        otp_entry = OTP(email=email, code=otp_code, purpose="registration")
+        db.session.add(otp_entry)
+        db.session.commit()
+
+        email_body = f"""
+        <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #ff6b6b;">Confirm Your AI Resume Account</h2>
+            <p>Hello {full_name},</p>
+            <p>Use the code below to verify your email address and start building your premium resume:</p>
+            <div style="background: #f8f9fa; padding: 15px; font-size: 24px; font-weight: bold; text-align: center; color: #333; letter-spacing: 5px;">
+                {otp_code}
+            </div>
+            <p>This code will expire in 10 minutes.</p>
+            <p>Best regards,<br>The AI Resume Team</p>
         </div>
-        <p>This code will expire in 10 minutes.</p>
-        <p>Best regards,<br>The AI Resume Team</p>
-    </div>
-    """
-    send_email("Verify your AI Resume Account", email, email_body)
+        """
+        send_email("Verify your AI Resume Account", email, email_body)
 
-    return jsonify({"success": True, "message": "Verify your email with the OTP sent.", "email": email}), 201
+        return jsonify({"success": True, "message": "Verify your email with the OTP sent.", "email": email}), 201
+    except Exception as exc:
+        db.session.rollback()
+        _log_api_exception("register", exc)
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @app.route("/api/auth/verify-otp", methods=["POST"])
@@ -1171,5 +1214,7 @@ def serve_frontend(path):
     # Serve index.html for all other frontend routes
     return send_from_directory(app.static_folder, "index.html")
 
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
