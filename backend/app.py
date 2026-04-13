@@ -145,10 +145,15 @@ service = ResumeModelService(dataset_path=DATASET_PATH)
 
 def send_email(subject, recipient, body_html):
     """Utility to send an email via SMTP."""
-    smtp_server = os.environ.get("SMTP_SERVER")
-    smtp_port = int(os.environ.get("SMTP_PORT", 587))
-    smtp_user = os.environ.get("SMTP_USER")
-    smtp_pass = os.environ.get("SMTP_PASS")
+    smtp_server = os.environ.get("SMTP_SERVER", "").strip()
+    
+    try:
+        smtp_port = int(os.environ.get("SMTP_PORT") or 587)
+    except Exception:
+        smtp_port = 587
+        
+    smtp_user = os.environ.get("SMTP_USER", "").strip()
+    smtp_pass = os.environ.get("SMTP_PASS", "").strip()
     mail_sender = os.environ.get("MAIL_SENDER", "AI Resume <noreply@airesume.com>")
 
     if not all([smtp_server, smtp_user, smtp_pass]):
