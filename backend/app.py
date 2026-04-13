@@ -115,6 +115,10 @@ DATABASE_URL = _build_database_url()
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_pre_ping": True,
+    "pool_recycle": 300,
+}
 
 CORS(app, supports_credentials=True)
 
@@ -131,6 +135,8 @@ try:
         db.create_all()
     print("[DB] Tables created successfully.")
 except Exception as e:
+    import traceback
+    traceback.print_exc()
     print(f"[DB] Warning: Database init failed: {e}")
     print("[DB] Server will run but auth features won't work.")
 
@@ -184,10 +190,15 @@ def _log_api_exception(route_name: str, exc: Exception):
 @app.errorhandler(Exception)
 def handle_api_exception(exc):
     """Return JSON for API failures instead of HTML error pages."""
+    import traceback
     route = request.path or ""
     if route.startswith("/api/"):
         _log_api_exception(route, exc)
-        return jsonify({"success": False, "error": str(exc) or "Internal server error"}), 500
+        return jsonify({
+            "success": False, 
+            "error": str(exc) or "Internal server error",
+            "trace": traceback.format_exc()
+        }), 500
     raise exc
 
 ALLOWED_PAGES = {
@@ -475,7 +486,27 @@ def _build_resume_prefill(resume_text: str, category: str, detected_skills: List
 
 @app.get("/api/health")
 def health():
-    return jsonify({"status": "ok"})
+    import traceback
+    db_status = "ok"
+    trace = ""
+    try:
+        # Check DB connection
+        import sqlalchemy
+        db.session.execute(sqlalchemy.text('SELECT 1'))
+    except Exception as e:
+        db_status = str(e)
+        trace = traceback.format_exc()
+    
+    masked_url = DATABASE_URL
+    if "MYSQLPASSWORD" in os.environ:
+        masked_url = masked_url.replace(os.environ["MYSQLPASSWORD"], "***")
+        
+    return jsonify({
+        "status": "ok",
+        "database_status": db_status,
+        "database_url_masked": masked_url,
+        "trace": trace
+    })
 
 
 @app.post("/api/generate-summary")
@@ -851,9 +882,10 @@ def register():
 
         return jsonify({"success": True, "message": "Verify your email with the OTP sent.", "email": email}), 201
     except Exception as exc:
+        import traceback
         db.session.rollback()
         _log_api_exception("register", exc)
-        return jsonify({"success": False, "error": str(exc)}), 500
+        return jsonify({"success": False, "error": str(exc), "trace": traceback.format_exc()}), 500
 
 
 @app.route("/api/auth/verify-otp", methods=["POST"])
