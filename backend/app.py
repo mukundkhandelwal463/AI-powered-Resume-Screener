@@ -64,17 +64,33 @@ logging.basicConfig(
 # --- Database Config ---
 def _build_database_url() -> str:
     """Use MySQL when available, otherwise fall back to local SQLite for development."""
+    # Railway full URLs
+    public_url = os.environ.get("MYSQL_PUBLIC_URL")
+    if public_url:
+        if public_url.startswith("mysql://"):
+            return public_url.replace("mysql://", "mysql+pymysql://")
+        return public_url
+
+    private_url = os.environ.get("MYSQL_URL")
+    if private_url:
+        if private_url.startswith("mysql://"):
+            return private_url.replace("mysql://", "mysql+pymysql://")
+        return private_url
+
     database_url = os.environ.get("DATABASE_URL")
     if database_url:
+        if database_url.startswith("mysql://"):
+            return database_url.replace("mysql://", "mysql+pymysql://")
         return database_url
 
+    # Fallback to individual variables
     railway_host = os.environ.get("MYSQLHOST")
-    railway_user = os.environ.get("MYSQLUSER")
+    railway_user = os.environ.get("MYSQLUSER", "root")
     railway_password = os.environ.get("MYSQLPASSWORD")
     railway_database = os.environ.get("MYSQLDATABASE")
-    railway_port = os.environ.get("MYSQLPORT")
+    railway_port = os.environ.get("MYSQLPORT") or os.environ.get("DB_PORT", "3306")
 
-    if not all([railway_host, railway_user, railway_password, railway_database, railway_port]):
+    if not all([railway_host, railway_password, railway_database, railway_port]):
         print("[DB] MySQL variables missing. Falling back to local SQLite.")
         return f"sqlite:///{SQLITE_FALLBACK_PATH.as_posix()}"
 
