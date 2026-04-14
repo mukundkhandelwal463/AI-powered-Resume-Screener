@@ -154,7 +154,10 @@ def _send_email_sync(subject, recipient, body_html):
         smtp_port = 587
         
     smtp_user = os.environ.get("SMTP_USER", "").strip()
-    smtp_pass = os.environ.get("SMTP_PASS", "").strip()
+    smtp_pass_raw = os.environ.get("SMTP_PASS", "").strip()
+    # Gmail app passwords are often copied with spaces every 4 chars.
+    # Normalize to avoid auth failures caused by formatting.
+    smtp_pass = smtp_pass_raw.replace(" ", "")
     default_sender = smtp_user if smtp_user else "noreply@airesume.com"
     mail_sender = os.environ.get("MAIL_SENDER", "").strip() or default_sender
 
