@@ -155,7 +155,8 @@ def _send_email_sync(subject, recipient, body_html):
         
     smtp_user = os.environ.get("SMTP_USER", "").strip()
     smtp_pass = os.environ.get("SMTP_PASS", "").strip()
-    mail_sender = os.environ.get("MAIL_SENDER", "AI Resume <noreply@airesume.com>")
+    default_sender = smtp_user if smtp_user else "noreply@airesume.com"
+    mail_sender = os.environ.get("MAIL_SENDER", "").strip() or default_sender
 
     if not all([smtp_server, smtp_user, smtp_pass]):
         print("[SMTP] Error: Missing configuration in .env")
@@ -201,21 +202,44 @@ def _send_email_sync(subject, recipient, body_html):
     return False
 
 
-def send_email(subject, recipient, body_html):
-    """Send email in a background thread so the API response is not blocked."""
-    thread = threading.Thread(
-        target=_send_email_sync,
-        args=(subject, recipient, body_html),
-        daemon=True,
-    )
-    thread.start()
-    print(f"[SMTP] Email queued for {recipient} (background thread)")
-    return True
+def send_email(subject, recipient, body_html, background=True):
+    """
+    Send email and optionally run in background.
+    Returns:
+      - True/False for synchronous mode
+      - True immediately for background mode (queued)
+    """
+    if background:
+        thread = threading.Thread(
+            target=_send_email_sync,
+            args=(subject, recipient, body_html),
+            daemon=True,
+        )
+        thread.start()
+        print(f"[SMTP] Email queued for {recipient} (background thread)")
+        return True
+
+    return _send_email_sync(subject, recipient, body_html)
 
 
 def generate_otp(length=6):
     """Generate a random numeric OTP."""
     return "".join(random.choices(string.digits, k=length))
+
+
+def _build_otp_email_html(full_name: str, otp_code: str) -> str:
+    return f"""
+    <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #ff6b6b;">Confirm Your AI Resume Account</h2>
+        <p>Hello {full_name or 'there'},</p>
+        <p>Use the code below to verify your email address and continue:</p>
+        <div style="background: #f8f9fa; padding: 15px; font-size: 24px; font-weight: bold; text-align: center; color: #333; letter-spacing: 5px;">
+            {otp_code}
+        </div>
+        <p>This code will expire in 10 minutes.</p>
+        <p>Best regards,<br>The AI Resume Team</p>
+    </div>
+    """
 
 
 def _log_api_exception(route_name: str, exc: Exception):
@@ -951,19 +975,13 @@ def register():
         db.session.add(otp_entry)
         db.session.commit()
 
-        email_body = f"""
-        <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2 style="color: #ff6b6b;">Confirm Your AI Resume Account</h2>
-            <p>Hello {full_name},</p>
-            <p>Use the code below to verify your email address and start building your premium resume:</p>
-            <div style="background: #f8f9fa; padding: 15px; font-size: 24px; font-weight: bold; text-align: center; color: #333; letter-spacing: 5px;">
-                {otp_code}
-            </div>
-            <p>This code will expire in 10 minutes.</p>
-            <p>Best regards,<br>The AI Resume Team</p>
-        </div>
-        """
-        send_email("Verify your AI Resume Account", email, email_body)
+        email_body = _build_otp_email_html(full_name, otp_code)
+        sent = send_email("Verify your AI Resume Account", email, email_body, background=False)
+        if not sent:
+            return jsonify({
+                "success": False,
+                "error": "Unable to send OTP email. Please check SMTP settings and try again."
+            }), 500
 
         return jsonify({"success": True, "message": "Verify your email with the OTP sent.", "email": email}), 201
     except Exception as exc:
@@ -1028,7 +1046,13 @@ def resend_otp():
     db.session.add(otp_entry)
     db.session.commit()
 
-    send_email("New Verification Code", email, f"Your new code is: {otp_code}")
+    email_body = _build_otp_email_html(user.full_name if user else "", otp_code)
+    sent = send_email("New Verification Code", email, email_body, background=False)
+    if not sent:
+        return jsonify({
+            "success": False,
+            "error": "Unable to resend OTP email. Please check SMTP settings and try again."
+        }), 500
     return jsonify({"success": True, "message": "New OTP sent."})
 
 
