@@ -15,6 +15,7 @@ from flask_cors import CORS
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import parseaddr
 import random
 import string
 
@@ -160,6 +161,16 @@ def _send_email_sync(subject, recipient, body_html):
     smtp_pass = smtp_pass_raw.replace(" ", "")
     default_sender = smtp_user if smtp_user else "noreply@airesume.com"
     mail_sender = os.environ.get("MAIL_SENDER", "").strip() or default_sender
+    sender_email = parseaddr(mail_sender)[1].lower().strip()
+    smtp_user_lower = smtp_user.lower().strip()
+
+    # Gmail commonly rejects messages when "From" does not match the authenticated mailbox.
+    if "gmail.com" in smtp_server.lower() and sender_email and sender_email != smtp_user_lower:
+        print(
+            f"[SMTP] MAIL_SENDER '{mail_sender}' does not match SMTP_USER '{smtp_user}'. "
+            f"Using SMTP_USER as sender for Gmail compatibility."
+        )
+        mail_sender = smtp_user
 
     if not all([smtp_server, smtp_user, smtp_pass]):
         print("[SMTP] Error: Missing configuration in .env")
@@ -581,7 +592,7 @@ def health():
 
 @app.get("/api/test-smtp")
 def test_smtp():
-    """Temporary diagnostic: test SMTP connection synchronously and return exact error."""
+    """Temporary diagnostic: test SMTP auth and optional live send."""
     import traceback
     smtp_server = os.environ.get("SMTP_SERVER", "").strip()
     try:
@@ -589,7 +600,7 @@ def test_smtp():
     except Exception:
         smtp_port = 587
     smtp_user = os.environ.get("SMTP_USER", "").strip()
-    smtp_pass = os.environ.get("SMTP_PASS", "").strip()
+    smtp_pass = os.environ.get("SMTP_PASS", "").strip().replace(" ", "")
 
     if not all([smtp_server, smtp_user, smtp_pass]):
         return jsonify({"error": "Missing SMTP config", "server": smtp_server, "user": smtp_user, "pass_set": bool(smtp_pass)})
@@ -618,7 +629,23 @@ def test_smtp():
     except Exception as e:
         results.append({"method": "SSL", "port": 465, "status": "FAILED", "error": str(e), "trace": traceback.format_exc()})
 
-    return jsonify({"smtp_server": smtp_server, "smtp_port": smtp_port, "smtp_user": smtp_user, "results": results})
+    # Optional live send test:
+    # /api/test-smtp?send=1&to=someone@example.com
+    should_send = str(request.args.get("send", "")).strip() in {"1", "true", "yes"}
+    send_to = (request.args.get("to") or "").strip() or smtp_user
+    send_result = None
+    if should_send:
+        body = "<p>This is a live SMTP delivery test from AI Resume.</p>"
+        ok = _send_email_sync("AI Resume SMTP Test", send_to, body)
+        send_result = {"to": send_to, "status": "SUCCESS" if ok else "FAILED"}
+
+    return jsonify({
+        "smtp_server": smtp_server,
+        "smtp_port": smtp_port,
+        "smtp_user": smtp_user,
+        "results": results,
+        "send_test": send_result,
+    })
 
 
 @app.post("/api/generate-summary")
