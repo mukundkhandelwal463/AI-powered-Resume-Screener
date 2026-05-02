@@ -1,10 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm --prefix client ci && npm --prefix client run build",
-  "functions": {
-    "index.py": {
-      "maxDuration": 60,
-      "includeFiles": "{backend/**,forntend/**,client/dist/**}"
-    }
-  }
+  "buildCommand": "npm --prefix client ci && npm --prefix client run build"
 }
