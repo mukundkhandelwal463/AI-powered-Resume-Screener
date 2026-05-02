@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Builder - Premium Edition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff6b4a;
+            --primary-hover: #e65a3d;
+            --bg: #fdfaf8;
+            --surface: #ffffff;
+            --text: #2d2621;
+            --muted: #6b635e;
+            --border: #e0d9d5;
+            --radius: 12px;
+            --shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+        .navbar { 
+            background: var(--surface); 
+            padding: 1rem 5%; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .brand { font-family: 'Sora', sans-serif; font-weight: 800; color: var(--primary); text-decoration: none; font-size: 1.5rem; }
+
+        .builder-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: calc(100vh - 70px);
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Form Side */
+        .form-side {
+            padding: 3rem;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+        }
+
+        .step-indicator {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+            background: #f8f6f4;
+            padding: 0.5rem;
+            border-radius: 99px;
+        }
+        .step-dot {
+            flex: 1;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+        .step-dot.active { background: var(--primary); }
+
+        .section-title { font-family: 'Sora', sans-serif; margin-bottom: 2rem; font-size: 1.8rem; }
+        
+        .input-group { margin-bottom: 1.5rem; }
+        label { display: block; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        input, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(255,107,74,0.1); }
+
+        .bullet-inputs { display: grid; gap: 0.8rem; margin-top: 0.5rem; }
+
+        /* Dynamic List Item */
+        .list-item {
+            background: #fff;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        .btn-remove { position: absolute; top: 1rem; right: 1rem; color: #ff4d4d; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+
+        .btn-add {
+            background: #fdfaf8;
+            border: 2px dashed var(--border);
+            width: 100%;
+            padding: 1rem;
+            border-radius: var(--radius);
+            color: var(--primary);
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 2rem;
+            transition: all 0.2s;
+        }
+        .btn-add:hover { background: #fff4f2; border-color: var(--primary); }
+
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 3rem; }
+        .btn { padding: 12px 30px; border-radius: 99px; font-weight: 600; cursor: pointer; transition: 0.2s; border: none; }
+        .btn-prev { background: #f0eeed; color: var(--text); }
+        .btn-next { background: var(--primary); color: white; }
+        .btn-next:hover { background: var(--primary-hover); transform: translateY(-2px); }
+
+        /* Preview Side */
+        .preview-side {
+            padding: 3rem;
+            background: #f0eeed;
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+        }
+        .resume-paper {
+            background: white;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 1 / 1.414;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            font-family: 'Times New Roman', Times, serif;
+            color: #000;
+        }
+
+        .preview-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 15px; }
+        .preview-name { font-size: 24pt; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+        .preview-contact { font-size: 10pt; color: #444; }
+
+        .preview-section { margin-bottom: 15px; }
+        .preview-section-title { font-size: 12pt; font-weight: bold; border-bottom: 1px solid #ddd; margin-bottom: 5px; text-transform: uppercase; }
+        
+        .preview-item { margin-bottom: 10px; }
+        .preview-item-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 11pt; }
+        .preview-bullets { list-style-type: disc; padding-left: 20px; font-size: 10pt; }
+
+        @media (max-width: 1000px) {
+            .builder-container { grid-template-columns: 1fr; }
+            .preview-side { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="/" class="brand">AR AIResume</a>
+    <div style="font-size: 0.8rem; color: var(--muted); font-weight: 600;">SAVE PROGRESS: AUTO-ENABLED</div>
+</nav>
+
+<div class="builder-container">
+    <!-- Form Section -->
+    <div class="form-side" id="form-container">
+        <!-- JS will inject steps here -->
+    </div>
+
+    <!-- Preview Section -->
+    <div class="preview-side">
+        <div class="resume-paper" id="resume-preview">
+            <div class="preview-header">
+                <div class="preview-name" id="p-name">YOUR NAME</div>
+                <div class="preview-contact" id="p-contact">Email | Phone | Location</div>
+            </div>
+            
+            <div id="preview-content">
+                <!-- JS will inject preview content here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentStep = 0;
+    let resumeData = {
+        personal: { name: '', email: '', phone: '', location: '', github: '', linkedin: '' },
+        summary: '',
+        experience: [],
+        education: [],
+        projects: [],
+        skills: '',
+        certifications: []
+    };
+
+    const steps = [
+        { title: 'Personal Info', type: 'personal' },
+        { title: 'Summary', type: 'summary' },
+        { title: 'Experience', type: 'experience' },
+        { title: 'Education', type: 'education' },
+        { title: 'Projects', type: 'projects' },
+        { title: 'Skills', type: 'skills' }
+    ];
+
+    function renderStep() {
+        const container = document.getElementById('form-container');
+        const step = steps[currentStep];
+        
+        let html = `
+            <div class="step-indicator">
+                ${steps.map((_, i) => `<div class="step-dot ${i <= currentStep ? 'active' : ''}"></div>`).join('')}
+            </div>
+            <p style="color:var(--primary); font-size:0.8rem; font-weight:800; text-transform:uppercase; margin-bottom:0.5rem;">Step ${currentStep + 1} of ${steps.length}</p>
+            <h2 class="section-title">${step.title}</h2>
+        `;
+
+        if (step.type === 'personal') {
+            html += `
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" id="f-name" value="${resumeData.personal.name}" oninput="updatePersonal('name', this.value)" placeholder="John Doe">
+                </div>
+                <div class="input-group">
+                    <label>Email & Phone</label>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                        <input type="email" id="f-email" value="${resumeData.personal.email}" oninput="updatePersonal('email', this.value)" placeholder="john@example.com">
+                        <input type="text" id="f-phone" value="${resumeData.personal.phone}" oninput="updatePersonal('phone', this.value)" placeholder="+91 999999999">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Location & Links</label>
+                    <input type="text" id="f-loc" value="${resumeData.personal.location}" oninput="updatePersonal('location', this.value)" placeholder="Mumbai, India">
+                </div>
+            `;
+        } else if (step.type === 'summary') {
+            html += `
+                <div class="input-group">
+                    <label>Professional Summary</label>
+                    <textarea id="f-summary" rows="6" oninput="resumeData.summary = this.value; updatePreview();" placeholder="Ambitious Software Engineer with 3+ years of experience...">${resumeData.summary}</textarea>
+                </div>
+            `;
+        } else if (step.type === 'experience') {
+            html += `<div id="experience-list">`;
+            resumeData.experience.forEach((exp, idx) => {
+                html += `
+                    <div class="list-item">
+                        <span class="btn-remove" onclick="removeListItem('experience', ${idx})">REMOVE</span>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                            <input placeholder="Company Name" value="${exp.company}" oninput="updateListItem('experience', ${idx}, 'company', this.value)">
+                            <input placeholder="Role" value="${exp.role}" oninput="updateListItem('experience', ${idx}, 'role', this.value)">
+                        </div>
+                        <input placeholder="Duration (e.g., June 2021 - Present)" value="${exp.duration}" oninput="updateListItem('experience', ${idx}, 'duration', this.value)">
+                        <div class="bullet-inputs">
+                            <label style="margin-top:1rem;">Key Achievements (Bullet Points)</label>
+                            ${[0,1,2,3].map(bi => `
+                                <input placeholder="Achievement ${bi+1}" value="${exp.bullets[bi] || ''}" oninput="updateBullet('experience', ${idx}, ${bi}, this.value)">
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div><button class="btn-add" onclick="addListItem('experience')">+ Add Experience</button>`;
+        } else if (step.type === 'education') {
+            html += `<div id="education-list">`;
+            resumeData.education.forEach((edu, idx) => {
+                html += `
+                    <div class="list-item">
+                        <span class="btn-remove" onclick="removeListItem('education', ${idx})">REMOVE</span>
+                        <input placeholder="University / School" value="${edu.school}" oninput="updateListItem('education', ${idx}, 'school', this.value)" style="margin-bottom:1rem;">
+                        <input placeholder="Degree / Course" value="${edu.degree}" oninput="updateListItem('education', ${idx}, 'degree', this.value)" style="margin-bottom:1rem;">
+                        <input placeholder="Year" value="${edu.year}" oninput="updateListItem('education', ${idx}, 'year', this.value)">
+                    </div>
+                `;
+            });
+            html += `</div><button class="btn-add" onclick="addListItem('education')">+ Add Education</button>`;
+        } else if (step.type === 'skills') {
+            html += `
+                <div class="input-group">
+                    <label>Technical Skills</label>
+                    <textarea id="f-skills" rows="6" oninput="resumeData.skills = this.value; updatePreview();" placeholder="Python, Java, React, SQL, Cloud Computing...">${resumeData.skills}</textarea>
+                </div>
+            `;
+        }
+
+        html += `
+            <div class="nav-buttons">
+                <button class="btn btn-prev" onclick="moveStep(-1)" ${currentStep === 0 ? 'disabled' : ''}>Previous</button>
+                <button class="btn btn-next" onclick="moveStep(1)">${currentStep === steps.length - 1 ? 'Build PDF & AI Review' : 'Next Step'}</button>
+            </div>
+        `;
+
+        container.innerHTML = html;
+        updatePreview();
+    }
+
+    function moveStep(dir) {
+        if (currentStep === steps.length - 1 && dir === 1) {
+            submitResume();
+            return;
+        }
+        currentStep += dir;
+        renderStep();
+    }
+
+    function updatePersonal(key, val) {
+        resumeData.personal[key] = val;
+        updatePreview();
+    }
+
+    function addListItem(type) {
+        if (type === 'experience') resumeData.experience.push({ company:'', role:'', duration:'', bullets:['','','',''] });
+        if (type === 'education') resumeData.education.push({ school:'', degree:'', year:'' });
+        renderStep();
+    }
+
+    function removeListItem(type, idx) {
+        resumeData[type].splice(idx, 1);
+        renderStep();
+    }
+
+    function updateListItem(type, idx, key, val) {
+        resumeData[type][idx][key] = val;
+        updatePreview();
+    }
+
+    function updateBullet(type, idx, bulletIdx, val) {
+        resumeData[type][idx].bullets[bulletIdx] = val;
+        updatePreview();
+    }
+
+    function updatePreview() {
+        document.getElementById('p-name').textContent = resumeData.personal.name || 'YOUR NAME';
+        document.getElementById('p-contact').textContent = `${resumeData.personal.email || 'Email'} | ${resumeData.personal.phone || 'Phone'} | ${resumeData.personal.location || 'Location'}`;
+
+        let contentHtml = '';
+
+        if (resumeData.summary) {
+            contentHtml += `<div class="preview-section"><div class="preview-section-title">Summary</div><div style="font-size:10pt;">${resumeData.summary}</div></div>`;
+        }
+
+        if (resumeData.experience.length > 0) {
+            contentHtml += `<div class="preview-section"><div class="preview-section-title">Professional Experience</div>`;
+            resumeData.experience.forEach(exp => {
+                contentHtml += `
+                    <div class="preview-item">
+                        <div class="preview-item-header"><span>${exp.company} | ${exp.role}</span><span>${exp.duration}</span></div>
+                        <ul class="preview-bullets">${exp.bullets.filter(b => b.trim()).map(b => `<li>${b}</li>`).join('')}</ul>
+                    </div>
+                `;
+            });
+            contentHtml += `</div>`;
+        }
+
+        if (resumeData.education.length > 0) {
+            contentHtml += `<div class="preview-section"><div class="preview-section-title">Education</div>`;
+            resumeData.education.forEach(edu => {
+                contentHtml += `
+                    <div class="preview-item">
+                        <div class="preview-item-header"><span>${edu.school}</span><span>${edu.year}</span></div>
+                        <div style="font-size:10pt;">${edu.degree}</div>
+                    </div>
+                `;
+            });
+            contentHtml += `</div>`;
+        }
+
+        if (resumeData.skills) {
+            contentHtml += `<div class="preview-section"><div class="preview-section-title">Technical Skills</div><div style="font-size:10pt;">${resumeData.skills}</div></div>`;
+        }
+
+        document.getElementById('preview-content').innerHTML = contentHtml;
+    }
+
+    async function submitResume() {
+        // Here you would call your backend API to build the PDF and get Gemini feedback
+        alert('Building your professional resume and getting AI feedback... Stand by!');
+        try {
+            const response = await fetch('/api/build-resume', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(resumeData)
+            });
+            const data = await response.json();
+            if (data.success) {
+                window.location.href = '/preview?id=' + data.resume_id;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    renderStep();
+</script>
+
+</body>
+</html>

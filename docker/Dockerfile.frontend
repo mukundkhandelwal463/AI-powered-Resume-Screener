@@ -1,0 +1,35 @@
+# ============================================================
+# AI Resume Screener — Frontend Dockerfile (Multi-Stage Build)
+# ============================================================
+
+# ---- Stage 1: Build React production bundle ----
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files first (Docker layer cache)
+COPY client/package*.json ./
+
+# Clean install from package-lock.json
+RUN npm ci
+
+# Copy React source code
+COPY client/ .
+
+# Build production bundle → /app/dist
+RUN npm run build
+
+# ---- Stage 2: Serve with Nginx (tiny production image) ----
+FROM nginx:alpine
+
+# Copy our custom Nginx configuration
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy the built React app into Nginx serving directory
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Expose HTTP port
+EXPOSE 80
+
+# Nginx runs in foreground
+CMD ["nginx", "-g", "daemon off;"]

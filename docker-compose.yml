@@ -1,0 +1,132 @@
+# ==============================================================
+# AI Resume Screener — Docker Compose (Full Stack)
+# Starts: Flask Backend, React Frontend, Prometheus, Grafana
+# ==============================================================
+# Usage:
+#   docker-compose up -d --build    ← start everything
+#   docker-compose down             ← stop everything
+#   docker-compose logs -f backend  ← follow backend logs
+# ==============================================================
+
+version: '3.8'
+
+services:
+
+  # ─────────────────────────────────────────────────────────────
+  # SERVICE 1: Flask Backend API
+  # ─────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: resume-backend
+    ports:
+      - "5000:5000"                        # host:container
+    environment:
+      # Gemini AI API Key — get from: https://aistudio.google.com/apikey
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      # Email / SMTP — use Gmail App Password
+      - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - MAIL_SENDER=${MAIL_SENDER}
+      # Database — MySQL in production, SQLite fallback in dev
+      - MYSQL_PUBLIC_URL=${MYSQL_PUBLIC_URL}
+      - SECRET_KEY=${SECRET_KEY:-airesume-secret-key-2026}
+      - FLASK_ENV=${FLASK_ENV:-production}
+      # Google OAuth (optional)
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+    volumes:
+      # Persist downloaded/generated resume files
+      - ./backend/downloads:/app/backend/downloads
+      # Persist SQLite DB for local dev (ignored in MySQL mode)
+      - resume_db_data:/app/backend
+    restart: unless-stopped
+    networks:
+      - resume-network
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ─────────────────────────────────────────────────────────────
+  # SERVICE 2: React Frontend (served via Nginx)
+  # ─────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: resume-frontend
+    ports:
+      - "3000:80"                          # App available at http://localhost:3000
+    depends_on:
+      backend:
+        condition: service_healthy          # Wait for backend health check
+    restart: unless-stopped
+    networks:
+      - resume-network
+
+  # ─────────────────────────────────────────────────────────────
+  # SERVICE 3: Prometheus (Metrics Collection)
+  # Scrapes /metrics endpoint from backend every 15 seconds
+  # UI: http://localhost:9090
+  # ─────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: resume-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - resume-network
+
+  # ─────────────────────────────────────────────────────────────
+  # SERVICE 4: Grafana (Dashboards and Visualization)
+  # UI: http://localhost:3001  (admin / resume123)
+  # ─────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: resume-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=resume123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_DOMAIN=localhost
+    volumes:
+      - ./monitoring/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - resume-network
+
+# ─────────────────────────────────────────────────────────────
+# NETWORKS — containers communicate using service names as DNS
+# backend:5000  frontend:80  prometheus:9090  grafana:3000
+# ─────────────────────────────────────────────────────────────
+networks:
+  resume-network:
+    driver: bridge
+
+# ─────────────────────────────────────────────────────────────
+# VOLUMES — persistent storage that survives container restarts
+# ─────────────────────────────────────────────────────────────
+volumes:
+  resume_db_data:
+  prometheus_data:
+  grafana_data:

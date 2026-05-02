@@ -1,0 +1,56 @@
+# ============================================================
+# AI Resume Screener — Backend Dockerfile (Multi-Stage Build)
+# ============================================================
+
+# ---- Stage 1: Builder (installs all deps) ----
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+# Install system dependencies needed for PDF parsing libs
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpoppler-cpp-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python requirements first (layer cache optimization)
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy full application source
+COPY backend/ ./backend/
+
+# ---- Stage 2: Production (small, only runtime) ----
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install only runtime system libs
+RUN apt-get update && apt-get install -y \
+    libpoppler-cpp-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy application code
+COPY --from=builder /app/backend ./backend
+
+# Create download folder
+RUN mkdir -p /app/backend/downloads
+
+# Expose Flask port
+EXPOSE 5000
+
+# Health check — hits the /api/health endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')" || exit 1
+
+# Start with Gunicorn (production WSGI server)
+CMD ["gunicorn", "backend.app:app", \
+     "--workers", "4", \
+     "--bind", "0.0.0.0:5000", \
+     "--timeout", "120", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-"]

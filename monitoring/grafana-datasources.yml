@@ -1,0 +1,19 @@
+# ==============================================================
+# Grafana Auto-Provisioning — Data Sources
+# This file is loaded automatically when Grafana starts
+# No manual setup needed — Prometheus is already connected!
+# ==============================================================
+
+apiVersion: 1
+
+datasources:
+  - name:      Prometheus
+    type:      prometheus
+    access:    proxy
+    url:       http://prometheus:9090   # Docker service name
+    isDefault: true
+    editable:  true
+    jsonData:
+      timeInterval:    "15s"
+      queryTimeout:    "60s"
+      httpMethod:      "POST"

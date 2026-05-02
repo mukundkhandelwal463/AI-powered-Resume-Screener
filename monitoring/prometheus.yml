@@ -1,0 +1,40 @@
+# ==============================================================
+# AI Resume Screener — Prometheus Configuration
+# Scrapes metrics from the Flask backend every 15 seconds
+# UI: http://localhost:9090
+# ==============================================================
+
+global:
+  # How often Prometheus scrapes targets
+  scrape_interval:      15s
+  # How long before a scrape times out
+  scrape_timeout:       10s
+  # How often rules are evaluated
+  evaluation_interval:  15s
+
+# Alerting rules (optional — uncomment to enable)
+# rule_files:
+#   - "alert-rules.yml"
+
+# Targets to scrape
+scrape_configs:
+
+  # ── Flask Backend API ──────────────────────────────────────
+  - job_name: 'resume-screener-api'
+    metrics_path: '/metrics'           # Endpoint on Flask backend
+    static_configs:
+      - targets: ['backend:5000']      # Docker service name + port
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'resume-backend'
+
+  # ── Prometheus itself ──────────────────────────────────────
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # ── Node Exporter (system metrics — add if you run it) ────
+  # - job_name: 'node-exporter'
+  #   static_configs:
+  #     - targets: ['node-exporter:9100']

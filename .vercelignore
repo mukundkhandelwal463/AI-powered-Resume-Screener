@@ -1,0 +1,26 @@
+.git/
+.github/
+.idea/
+.venv/
+.vscode/
+docker/
+kubernetes/
+monitoring/
+terraform/
+backend/tests/
+backend/__pycache__/
+client/node_modules/
+client/src/
+client/public/
+forntend/vercel.json
+cloud_devops_project_notes.md
+cloud_devops_review.md
+docker-compose.yml
+nixpacks.toml
+Procfile
+railway.json
+render.yaml
+run_devops_tools.ps1
+SERVICE_LOGINS.md
+rzp-key.csv
+resume scanner.txt

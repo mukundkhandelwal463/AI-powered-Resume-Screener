@@ -9,6 +9,30 @@ from pathlib import Path
 from dotenv import load_dotenv
 from datetime import datetime
 import json
+import time
+from threading import Lock
+
+# ── Prometheus Metrics Counters (Unit V: Monitoring & Observability) ──
+# These are thread-safe counters tracked in memory.
+# Prometheus scrapes them via GET /metrics every 15 seconds.
+_metrics_lock = Lock()
+_metrics = {
+    "http_requests_total":       0,   # Every HTTP request received
+    "resumes_analyzed_total":    0,   # POST /api/analyze-resume calls
+    "ats_score_sum":             0.0, # Sum of all ATS scores (to compute avg)
+    "ats_score_count":           0,   # Count of ATS scores given
+    "gemini_calls_total":        0,   # Total Gemini API calls
+    "gemini_errors_total":       0,   # Failed Gemini API calls
+    "auth_logins_total":         0,   # Successful logins
+    "auth_registrations_total":  0,   # New user registrations
+    "summaries_generated_total": 0,   # POST /api/generate-summary calls
+    "app_start_time":            time.time(),  # When Flask started (uptime calc)
+}
+
+def _increment(metric: str, value: float = 1):
+    """Thread-safe increment a metric counter."""
+    with _metrics_lock:
+        _metrics[metric] = _metrics.get(metric, 0) + value
 
 from flask import Flask, jsonify, request, render_template, abort, send_from_directory, redirect, session
 from flask_cors import CORS
@@ -143,6 +167,78 @@ except Exception as e:
     print("[DB] Server will run but auth features won't work.")
 
 service = ResumeModelService(dataset_path=DATASET_PATH)
+
+
+# ── Count every HTTP request automatically ────────────────────────
+@app.before_request
+def _count_request():
+    """Increment request counter on every incoming HTTP request."""
+    _increment("http_requests_total")
+
+
+# ── Prometheus /metrics endpoint (Unit V: Monitoring) ─────────────
+@app.get("/metrics")
+def prometheus_metrics():
+    """
+    Expose application metrics in Prometheus text format.
+    Prometheus scrapes this endpoint every 15 seconds (configured in monitoring/prometheus.yml).
+    Grafana reads from Prometheus to build dashboards.
+    """
+    with _metrics_lock:
+        total     = _metrics["http_requests_total"]
+        analyzed  = _metrics["resumes_analyzed_total"]
+        score_sum = _metrics["ats_score_sum"]
+        score_cnt = _metrics["ats_score_count"]
+        gcalls    = _metrics["gemini_calls_total"]
+        gerrors   = _metrics["gemini_errors_total"]
+        logins    = _metrics["auth_logins_total"]
+        regs      = _metrics["auth_registrations_total"]
+        summaries = _metrics["summaries_generated_total"]
+        uptime    = time.time() - _metrics["app_start_time"]
+
+    avg_ats = round(score_sum / score_cnt, 2) if score_cnt > 0 else 0.0
+
+    metrics_text = f"""# HELP http_requests_total Total number of HTTP requests received
+# TYPE http_requests_total counter
+http_requests_total {total}
+
+# HELP resumes_analyzed_total Total number of resumes analyzed via /api/analyze-resume
+# TYPE resumes_analyzed_total counter
+resumes_analyzed_total {analyzed}
+
+# HELP ats_score_avg Average ATS score given across all analyzed resumes (0-100)
+# TYPE ats_score_avg gauge
+ats_score_avg {avg_ats}
+
+# HELP ats_scores_count Total number of ATS scores computed
+# TYPE ats_scores_count counter
+ats_scores_count {score_cnt}
+
+# HELP gemini_calls_total Total number of Gemini AI API calls made
+# TYPE gemini_calls_total counter
+gemini_calls_total {gcalls}
+
+# HELP gemini_errors_total Total number of failed Gemini AI API calls
+# TYPE gemini_errors_total counter
+gemini_errors_total {gerrors}
+
+# HELP auth_logins_total Total number of successful user logins
+# TYPE auth_logins_total counter
+auth_logins_total {logins}
+
+# HELP auth_registrations_total Total number of new user registrations
+# TYPE auth_registrations_total counter
+auth_registrations_total {regs}
+
+# HELP summaries_generated_total Total number of AI professional summaries generated
+# TYPE summaries_generated_total counter
+summaries_generated_total {summaries}
+
+# HELP app_uptime_seconds Seconds since Flask application started
+# TYPE app_uptime_seconds gauge
+app_uptime_seconds {round(uptime, 1)}
+"""
+    return metrics_text, 200, {"Content-Type": "text/plain; version=0.0.4"}
 
 
 def _send_email_sync(subject, recipient, body_html):

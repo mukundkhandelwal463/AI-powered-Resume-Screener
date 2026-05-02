@@ -1,0 +1,207 @@
+# ==============================================================
+# Kubernetes Deployment — AI Resume Screener Backend
+# ==============================================================
+# Apply with: kubectl apply -f kubernetes/
+# ==============================================================
+
+# ── Namespace ──────────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: resume-screener
+  labels:
+    app: resume-screener
+
+---
+# ── Secret — sensitive environment variables ───────────────────
+apiVersion: v1
+kind: Secret
+metadata:
+  name: resume-secrets
+  namespace: resume-screener
+type: Opaque
+stringData:
+  gemini-api-key: "YOUR_GEMINI_API_KEY_HERE"
+  smtp-pass:      "YOUR_SMTP_APP_PASSWORD_HERE"
+  secret-key:     "airesume-secret-key-2026"
+
+---
+# ── Backend Deployment ─────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resume-backend
+  namespace: resume-screener
+  labels:
+    app: resume-backend
+spec:
+  replicas: 3                          # Start with 3 Flask pods
+  selector:
+    matchLabels:
+      app: resume-backend
+  strategy:
+    type: RollingUpdate                # Zero-downtime updates
+    rollingUpdate:
+      maxSurge:        1
+      maxUnavailable:  0
+  template:
+    metadata:
+      labels:
+        app: resume-backend
+    spec:
+      containers:
+        - name: backend
+          image: YOUR_DOCKERHUB_USERNAME/resume-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          env:
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: resume-secrets
+                  key: gemini-api-key
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: resume-secrets
+                  key: smtp-pass
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: resume-secrets
+                  key: secret-key
+            - name: FLASK_ENV
+              value: "production"
+            - name: SMTP_SERVER
+              value: "smtp.gmail.com"
+            - name: SMTP_PORT
+              value: "587"
+          # Resource limits — prevent one pod from eating all memory
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu:    "250m"
+            limits:
+              memory: "1Gi"
+              cpu:    "1000m"
+          # Readiness probe — K8s only sends traffic when pod is ready
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds:       10
+            failureThreshold:    3
+          # Liveness probe — K8s restarts pod if it becomes unhealthy
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 60
+            periodSeconds:       30
+            failureThreshold:    5
+          volumeMounts:
+            - name: downloads-vol
+              mountPath: /app/backend/downloads
+      volumes:
+        - name: downloads-vol
+          emptyDir: {}
+
+---
+# ── Backend Service (Internal Load Balancer) ──────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: resume-backend-svc
+  namespace: resume-screener
+  labels:
+    app: resume-backend
+spec:
+  selector:
+    app: resume-backend
+  ports:
+    - name:       http
+      port:       5000
+      targetPort: 5000
+  type: ClusterIP                      # Internal only — Nginx routes to this
+
+---
+# ── Frontend Deployment ───────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resume-frontend
+  namespace: resume-screener
+  labels:
+    app: resume-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: resume-frontend
+  template:
+    metadata:
+      labels:
+        app: resume-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: YOUR_DOCKERHUB_USERNAME/resume-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu:    "50m"
+            limits:
+              memory: "256Mi"
+              cpu:    "200m"
+
+---
+# ── Frontend Service (LoadBalancer for external access) ───────
+apiVersion: v1
+kind: Service
+metadata:
+  name: resume-frontend-svc
+  namespace: resume-screener
+  labels:
+    app: resume-frontend
+spec:
+  selector:
+    app: resume-frontend
+  ports:
+    - name:       http
+      port:       80
+      targetPort: 80
+  type: LoadBalancer                   # Exposes to the internet
+
+---
+# ── Horizontal Pod Autoscaler (HPA) ──────────────────────────
+# Automatically scales backend pods based on CPU usage
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: resume-backend-hpa
+  namespace: resume-screener
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: resume-backend
+  minReplicas: 2                       # Never fewer than 2 pods
+  maxReplicas: 10                      # Never more than 10 pods
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type:               AverageUtilization
+          averageUtilization: 70       # Scale up if CPU > 70%
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type:               AverageUtilization
+          averageUtilization: 80       # Scale up if memory > 80%
