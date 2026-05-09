@@ -30,7 +30,7 @@ provider "aws" {
 variable "aws_region" {
   description = "AWS region where resources will be created"
   type        = string
-  default     = "us-east-1"
+  default     = "ap-south-1"   # Mumbai — matches your AWS CLI config
 }
 
 variable "instance_type" {
@@ -125,16 +125,32 @@ resource "aws_security_group" "resume_sg" {
   }
 }
 
+# ── Latest Amazon Linux 2023 AMI (auto-detected per region) ───
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-*-x86_64"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
 # ── EC2 Instance ───────────────────────────────────────────────
 resource "aws_instance" "resume_server" {
-  ami                    = "ami-0c55b159cbfafe1f0"   # Amazon Linux 2 (us-east-1)
+  ami                    = data.aws_ami.amazon_linux.id
   instance_type          = var.instance_type
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.resume_sg.id]
 
   # Root volume — 20GB is enough for Docker images + resume files
   root_block_device {
-    volume_size = 20
+    volume_size = 30
     volume_type = "gp3"
   }
 
@@ -144,10 +160,10 @@ resource "aws_instance" "resume_server" {
     set -e
 
     echo "=== AI Resume Screener Server Setup ==="
-    yum update -y
+    dnf update -y
 
     # Install Docker
-    amazon-linux-extras install docker -y
+    dnf install docker -y
     systemctl start docker
     systemctl enable docker
     usermod -aG docker ec2-user
@@ -158,10 +174,10 @@ resource "aws_instance" "resume_server" {
     chmod +x /usr/local/bin/docker-compose
 
     # Install Git
-    yum install git -y
+    dnf install git -y
 
     # Clone the project
-    git clone https://github.com/USERNAME/Resume_Screener.git /app
+    git clone https://github.com/mukundkhandelwal463/AI-powered-Resume-Screener.git /app
     cd /app
 
     # Create .env file from secrets (replace with real values)

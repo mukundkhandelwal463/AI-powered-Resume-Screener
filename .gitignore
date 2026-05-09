@@ -10,3 +10,16 @@ backend/.env
 *.log
 backend/*.db
 backend/server_*.log
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+*.pem
+
+# Node
+node_modules/
+dist/
+client/node_modules/
+client/dist/

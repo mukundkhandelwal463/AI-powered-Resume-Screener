@@ -22,26 +22,20 @@ services:
     container_name: resume-backend
     ports:
       - "5000:5000"                        # host:container
+    env_file:
+      - backend/.env                       # Load all env vars from .env file
     environment:
-      # Gemini AI API Key — get from: https://aistudio.google.com/apikey
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      # Email / SMTP — use Gmail App Password
-      - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASS=${SMTP_PASS}
-      - MAIL_SENDER=${MAIL_SENDER}
-      # Database — MySQL in production, SQLite fallback in dev
-      - MYSQL_PUBLIC_URL=${MYSQL_PUBLIC_URL}
-      - SECRET_KEY=${SECRET_KEY:-airesume-secret-key-2026}
-      - FLASK_ENV=${FLASK_ENV:-production}
-      # Google OAuth (optional)
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      # Force SQLite inside Docker (no MySQL container available)
+      - MYSQLHOST=
+      - MYSQLPASSWORD=
+      - MYSQL_PUBLIC_URL=
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1                 # Show logs immediately
     volumes:
       # Persist downloaded/generated resume files
       - ./backend/downloads:/app/backend/downloads
-      # Persist SQLite DB for local dev (ignored in MySQL mode)
-      - resume_db_data:/app/backend
+      # Persist SQLite database
+      - resume_db_data:/app/backend/data
     restart: unless-stopped
     networks:
       - resume-network
@@ -51,7 +45,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 90s
 
   # ─────────────────────────────────────────────────────────────
   # SERVICE 2: React Frontend (served via Nginx)

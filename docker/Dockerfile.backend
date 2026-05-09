@@ -19,6 +19,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy full application source
 COPY backend/ ./backend/
+# Copy frontend templates (Flask references ../forntend/ for HTML pages)
+COPY forntend/ ./forntend/
 
 # ---- Stage 2: Production (small, only runtime) ----
 FROM python:3.11-slim
@@ -36,6 +38,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
 COPY --from=builder /app/backend ./backend
+# Copy frontend templates
+COPY --from=builder /app/forntend ./forntend
 
 # Create download folder
 RUN mkdir -p /app/backend/downloads
@@ -43,13 +47,17 @@ RUN mkdir -p /app/backend/downloads
 # Expose Flask port
 EXPOSE 5000
 
+# Ensure Python can find backend modules (model1, ai_integration, database)
+ENV PYTHONPATH=/app/backend
+WORKDIR /app/backend
+
 # Health check — hits the /api/health endpoint
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=5 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')" || exit 1
 
 # Start with Gunicorn (production WSGI server)
-CMD ["gunicorn", "backend.app:app", \
-     "--workers", "4", \
+CMD ["gunicorn", "app:app", \
+     "--workers", "2", \
      "--bind", "0.0.0.0:5000", \
      "--timeout", "120", \
      "--access-logfile", "-", \
