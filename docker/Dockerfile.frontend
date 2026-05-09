@@ -10,8 +10,11 @@ WORKDIR /app
 # Copy package files first (Docker layer cache)
 COPY client/package*.json ./
 
-# Clean install from package-lock.json
-RUN npm ci
+# Install dependencies with retry config (handles slow network in CI/CD)
+RUN npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
+    npm install
 
 # Copy React source code
 COPY client/ .
